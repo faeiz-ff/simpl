@@ -1,0 +1,31 @@
+datumStmt
+ID (LESS datumStmt GREATER)? ID (tetap)? 
+
+functionCall
+ID LPAREN 
+
+mesin jet = (angka prop) mesin {
+
+}
+
+syntax = (angka p) angka { hasil p*p }
+expr calls grouping because its matched with LPAREN
+groupingExpr expects LPAREN EXPR RPAREN
+lparen eaten, next is ID (angka)
+OR->AND->EQ->term->fact->prim->ID // primary found ID
+ID eaten, next is ID again
+OR->AND->EQ->term->fact->ID // fact doesnt see * or /
+OR->AND->EQ->term->ID // term doesnt see + -
+so on 
+EXPR returns ID
+shape becomes LPAREN ID
+grouping expects RPAREN, but found ID (p)
+// if this match ID return lambda
+calls lambda 
+
+
+
+syntax = 
+    mesin kuadrat = (angka a) angka { hasil a*a }
+    angka lima = kuadrat(5) + 2 + ()
+    function(realll)

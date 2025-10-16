@@ -1,0 +1,194 @@
+
+keywords
+petik angka rubah cetak kalau slagi untuk henti lewat dalam jawab mesin jenis model kerja
+benar salah nihil error 
+
+'''
+angka umur = (19 - 5 * 2) + (10 + 10) / 2
+petik nama = "zie"
+logis waras = benar == !benar | benar & salah
+baris<petik> tetap dialog_dialog = ["Halo,", "Apa kabar?"]
+
+kalau waras {
+  cetak "dia waras"
+} namun {
+  cetak "dia tidak waras"
+}
+
+slagi benar {
+  cetak waras
+  kalau !waras {
+  rubah waras = benar
+  lewat
+}
+  henti
+}
+
+untuk petik dialog dalam dialog_dialog {
+      cetak dialog
+}
+
+mesin penambah = (angka a, angka b) angka {
+  hasil a + b
+}
+
+Jenis Token (
+  ID,
+  Literal,
+  EOF
+)
+
+model Pohon (
+  Pohon kiri,
+  Pohon kanan,
+  angka nilai
+)
+
+'''
+
+expressions
+expression = <orTerm>
+
+orTerm = <andTerm> ('|' <andTerm>)*
+andTerm = equality ('&' <equality>)*
+equality = <term> (('==' | '!=' | '>=' | '<=') <term>)*
+
+term = <factor> (( '+' | '-' ) <factor>)*
+factor = <primary> (( '*' | '/' ) <primary>)*
+
+primary = <literalExpr> Literal
+        | <groupingExpr> LPAREN could be id
+        | <identifierExpr> ID
+        | <functionCallExpr> ID LPAREN
+        | <unaryExpr> BANG | PLUS | MINUS
+        | <lambdaExpr> LPAREN ID 
+        | nihil
+
+identifierExpr = [name] ( '.' <identifierExpr>)?
+
+unaryExpr = ( '!' | '+' | '-' ) <primary>
+
+groupingExpr = '(' <expression> ')'
+
+functionCallExpr = [callable] '(' (<expression> ( ',' <expression>)*)? ')'
+
+lambdaExpr = '(' (<type> [param] ( ',' <type> [param] )* )? ')' <type> <blockStmt>
+
+statements
+statement = <datumStmt> ID
+          | <rubahStmt> rubah
+          | <cetakStmt> cetak
+          | <blockStmt> LCURLY
+          | <kalauStmt> kalau
+          | <slagiStmt> slagi
+	        | <untukStmt> untuk
+          | henti 
+          | lewat
+          | <mesinStmt> mesin
+          | <jawabStmt> jawab
+          | <jenisStmt> jenis
+          | <modelStmt> model
+          | <exprStmt> none of the above
+
+variable instantiation statement
+datumStmt = <type> [name] ( '=' <expression> )?
+typeBase = petik
+         | angka
+         | logis
+         | mesin
+         | baris
+         | [jenis]
+         | [model]
+
+type = typeBase ( '<' <type> ( ',' <type> )* '>' )? tetap?
+
+# in learning of programming this isnt really that important, yet
+const modifier = 'tetap', put after type
+absolutely locked in place (baris is const, angka is const)
+baris<angka> tetap listSaya = [1,2,3]
+
+baris resizable but cannot modify the contents
+baris<angka tetap> listSaya = [1,2,3]
+
+outer baris resizable but not the contents
+baris<
+  baris<angka> tetap
+> idunno = [[2,3],[2,3]]
+
+idunno[1] = [1,2] # ERROR
+idunno.tambah([3]) # yes, but after it cant modify the [3] list
+
+locked in
+baris<baris<angka>> tetap abrakadabra 
+
+variable reassigning statement
+rubahStmt = rubah [name] '=' <expression>
+cant change variable tetap
+
+block statement
+blockStmt = '{' <statement>* '}'
+
+if-else statement
+kalauStmt = kalau <expression> <blockStmt> (namun kalau <blockStmt>)* (namun <blockStmt>)?
+
+kalau belum_makan {
+  makan()
+} namun kalau belum_mandi {
+  mandi()
+} namun {
+  cetak "mantap"
+}
+
+while statement
+slagiStmt = slagi <expression> <blockStmt>
+
+slagi duniaMasihAda() {
+  akuCintaKamu()
+}
+
+array declaration
+
+baris<petik> dialog = ["halo!", "apa kabar?", "the judgement day is coming"]
+rubah dialog[0] = "House, "
+cetak dialog[0] 
+
+for statement
+untukStmt = untuk <type> [name] dalam [iterable] <blockStmt>
+
+untuk angka tinggi_badan dalam [167, 170, 175, 155] {
+  cetak tinggi_badan
+}
+
+function declaration statement
+mesinStmt = mesin [name] '(' ( <type> [param] ( ',' <type> [param] )* )? ')' <type>? <blockStmt>
+hasilStmt = hasil <expression>
+
+enum declaration statement
+jenisStmt = jenis [name] '(' [enum] ( ',' [enum] )* ')'
+jenis Mood (
+  kenyang,
+  laper, 
+  ngantuk, 
+  semangat,
+)
+
+struct declaration statement
+modelStmt = model [name] '(' <type> ':' [attr] (',' <type> ':' [attr])* ')'
+
+model Koordinat ( angka x, angka y )
+
+Koordinat origin = Koordinat(5, 3)
+
+# less important
+importing from another file  
+imporStmt = impor <string>
+          | impor ( <name> | '*' ) dalam <string>
+
+impor semua dalam "./test.simpl"
+
+
+
+
+
+
+
