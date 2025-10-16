@@ -96,3 +96,15 @@ export class Call extends ExprBase {
     }
 }
 
+export class Array extends ExprBase {
+ // Array<Expr.Base> contents
+    constructor (contents) {
+        super();
+        this.contents = contents;
+    }
+
+    visit(visitor) {
+        return visitor.visitArrayExpr(this);
+    }
+}
+

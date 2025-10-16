@@ -20,4 +20,13 @@ class Simpl {
 }
 
 let simp = new Simpl();
-simp.runCode("angka fib) = fibnacci(10) + 120");
+simp.runCode
+(`
+    slagi benar {
+        henti
+    }
+        
+    untuk angka ganjil dalam [1, 3, 5, 7] {
+        cetak ganjil
+    }
+`);

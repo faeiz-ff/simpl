@@ -14,14 +14,16 @@ def writeAST(name, derived_list):
         d_name = d.split(':')[0].strip()
         
         d_param = ""
+        d_types = ""
+        d_params = ""
         if len(d.split(':')) >= 2:
             d_param = d.split(':')[1].strip()
-
-        d_types = [i.strip().split() for i in d_param.split(',')]
-        d_params = [i.strip().split()[1] for i in d_param.split(',')]
+            d_types = [i.strip().split() for i in d_param.split(',')]
+            d_params = [i.strip().split()[1] for i in d_param.split(',')]
 
         add("export class " + d_name + " extends " + name + "Base {")
-        add(" // " + ", ".join([t[0] + " " + t[1] for t in d_types]))
+        if d_param:
+            add(" // " + ", ".join([t[0] + " " + t[1] for t in d_types]))
         add("    constructor (" + ", ".join(d_params) + ") {")
         add("        super();")
         for p in d_params:
@@ -79,7 +81,7 @@ def main():
         [
             "rubah", "kalau", "namun", "slagi", "untuk", "cetak",
             "henti", "lewat", "dalam", "hasil", "kerja",
-            "jenis", "model", "nihil", "error", "objek", "tetap",
+            "jenis", "model", "error", "tetap",
         ],
         [
             "eof", "id", "literal", "plus", "minus", "star",
@@ -91,21 +93,27 @@ def main():
     )
 
     writeAST("Expr", [ # Expressions must return a value
-        "Binary : Expr.ExprBase left, Token op, Expr.ExprBase right",
-        "Unary : Token op, Expr.ExprBase right",
-        "Literal : Token token",
-        "Grouping : Expr.ExprBase expression",
+        "Binary     : Expr.ExprBase left, Token op, Expr.ExprBase right",
+        "Unary      : Token op, Expr.ExprBase right",
+        "Literal    : Token token",
+        "Grouping   : Expr.ExprBase expression",
         "Identifier : Token main, Expr.Identifier member",
-        "Lambda : Array<Stmt.Types-Expr.Identifier> params, Stmt.Type returnValue, Stmt.Block block",
-        "Call : Expr.ExprBase callable, Expr.ExprBase args",
+        "Lambda     : Array<Stmt.Types-Expr.Identifier> params, Stmt.Type returnValue, Stmt.Block block",
+        "Call       : Expr.ExprBase callable, Expr.ExprBase args",
+        "Array      : Array<Expr.Base> contents",
     ])
 
     writeAST("Stmt", [ # Statements should't return anything
         "Cetak : Expr.ExprBase expr",
         "Datum : Stmt.Type type, Token name, Expr.ExprBase expr",
-        "Type  : Identifier type, bool tetap, Array<Stmt.Type> contents",
+        "Type  : Identifier type, bool tetap, Array<Stmt.Type> contents", # type is a statement so that the lambdas work :')
         "Kerja : Expr.ExprBase expr",
-        "Block : Array<Stmt.StmtBase> statements"
+        "Block : Array<Stmt.StmtBase> statements",
+        "Kalau : Expr.ExprBase condition, Stmt.Block thenBlock, Stmt.Kalau elseKalau",
+        "Untuk : Stmt.Type varType, Token varName, Expr.Base iterable, Stmt.Block block",
+        "Slagi : Expr.ExprBase condition, Stmt.Block block",
+        "Henti",
+        "Lewat",
     ])
 
 if __name__ == "__main__":

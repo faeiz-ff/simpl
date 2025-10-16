@@ -64,13 +64,18 @@ export class Lexer {
         }
 
         if (this.errors.length >= 1) {
-            console.log(this.errors.reduce((prevString, nowError) => prevString += nowError.message + '\n', ""));
-            return;
+            if (!this.errors[0]) {
+
+            } else {
+                console.log(this.errors.reduce((prevString, nowError) => prevString += nowError.message + '\n', ""));
+                return;
+            }
         }
 
         tokens.push(new Token(TokenType.EOF, null, null, this.lineIndex));
+        this.debugPrintTokens(tokens);
+
         this.tokens = tokens;
-        this.debugPrintTokens();
         return this.tokens;
     }
 
@@ -178,13 +183,14 @@ export class Lexer {
 
             case '"': return this.string();
         }
+        if (this.isAtEnd()) return;
 
         this.errors.push(new SimplLexerError(`[Line ${this.lineIndex}] invalid character ${this.see()}`));
         this.advance();
     }
 
-    debugPrintTokens() {
-        for (let tok of this.tokens) {
+    debugPrintTokens(tokens) {
+        for (let tok of tokens) {
             console.log(tok.toString());
         }
     }

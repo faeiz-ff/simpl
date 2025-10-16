@@ -1,9 +1,12 @@
 
 keywords
-petik angka rubah cetak kalau slagi untuk henti lewat dalam jawab mesin jenis model kerja
-benar salah nihil error 
+petik angka logis rubah cetak 
+kalau slagi untuk henti lewat 
+dalam hasil jenis model kerja 
+nihil error benar salah mesin
+tetap 
 
-'''
+''' # Simpl interpreter should be able to interpret this
 angka umur = (19 - 5 * 2) + (10 + 10) / 2
 petik nama = "zie"
 logis waras = benar == !benar | benar & salah
@@ -18,9 +21,9 @@ kalau waras {
 slagi benar {
   cetak waras
   kalau !waras {
-  rubah waras = benar
-  lewat
-}
+    rubah waras = benar
+    lewat
+  }
   henti
 }
 
