@@ -47,20 +47,6 @@ export class Parser {
         return this.tokens[this.tokenIndex - 1];
     }
 
-    identifier() {
-        let id = this.previous()
-        let main = null;
-        if (this.match(TokenType.DOT)) {
-            this.eat(TokenType.ID, "Mengharapkan Nama");
-            let member = this.identifier();
-            main = new Expr.Identifier(id, member);
-        } else {
-            main = new Expr.Identifier(id, null);
-        }
-
-        return main;
-    }
-
     blockStmt() {
         let statements= [];
         while(!this.match(TokenType.RCURLY)) {
@@ -72,14 +58,13 @@ export class Parser {
     functionCallExpr(callable) {
         let args = [];
 
-        if (this.match(TokenType.RPAREN)) {
-            return new Expr.Call(callable, args);
+        if (this.check(TokenType.RPAREN)) {
+        } else {
+            do {
+                let expr = this.expression();
+                args.push(expr);
+            } while(this.match(TokenType.COMMA))
         }
-
-        do {
-            let expr = this.expression();
-            args.push(expr);
-        } while(this.match(TokenType.COMMA))
 
         this.eat(TokenType.RPAREN, "Mengharapkan ')' setelah pemanggilan fungsi");
 
@@ -127,12 +112,16 @@ export class Parser {
         return new Expr.Array(contents);
     }
 
+    arrayIndex(iterable) {
+        let index = this.expression();
+
+        this.eat(TokenType.RSQUARE, "Mengharapkan ']' untuk menutup indeks." );
+
+        return new Expr.Index(iterable, index);
+    }
+
     primary() {
-        if (this.match(TokenType.PLUS, TokenType.MINUS)) {
-            let op = this.previous();
-            let right = this.primary();
-            return new Expr.Unary(op, right);
-        } else if (this.match(TokenType.LPAREN)) {
+        if (this.match(TokenType.LPAREN)) {
             if (this.check(TokenType.RPAREN)) {
                 return this.lambda();
             }
@@ -146,20 +135,52 @@ export class Parser {
             let literal = this.previous();
             return new Expr.Literal(literal);
         } else if (this.match(TokenType.ID)) {
-            let id = this.identifier();
-            if (this.match(TokenType.LPAREN)) {
-                return this.functionCallExpr(id);
-            }
-            return id;
-        } else if (this.match(TokenType.LSQUARE)) {
-            return this.arrayExpr();
+            return this.valuable();
         }
         
         this.error("Mengharapkan Ekspresi valid.")
     }
 
+    valuable() {
+        let result = this.identifier();
+
+        while(true) {
+            if (this.match(TokenType.LPAREN)) {
+                result = this.functionCallExpr(result);
+            } else if (this.match(TokenType.LSQUARE)) {
+                result = this.arrayIndex(result);
+            } else if (this.match(TokenType.DOT)) {
+                result = this.member(result);
+            } else {
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    unary() {
+        if (this.match(TokenType.PLUS, TokenType.MINUS, TokenType.BANG)) {
+            let op = this.previous();
+            let right = this.unary();
+            return new Expr.Unary(op, right);
+        } else {
+            return this.primary();
+        }
+    }
+
+    identifier() {
+        return new Expr.Identifier(this.previous());
+    }
+
+    member(parent) {
+        this.eat(TokenType.ID, "Mengharapkan Nama member setelah '.'.");
+        let id = this.identifier();
+        return new Expr.Member(parent, id);
+    }  
+
     factor() {
-        let expr = this.primary();
+        let expr = this.unary();
 
         while(this.match(TokenType.STAR, TokenType.SLASH)) {
             let op = this.previous();
@@ -228,7 +249,7 @@ export class Parser {
     }
 
     typeStmt(type) {
-        if (!type) type = this.identifier();
+        if (!type) type = this.valuable();
         let contents = [];
         if (this.match(TokenType.LESS)) {
             this.eat(TokenType.ID, "Mengharapkan Tipe didalam < >.");
@@ -254,9 +275,9 @@ export class Parser {
 
     datumStmt(firstId) {
         let type = this.typeStmt(firstId);
-
+        console.log(type);
         this.eat(TokenType.ID, "Mengharapkan Nama pada deklarasi variabel.");
-        let id = this.previous();
+        let id = this.identifier();
         let expr = null;
         if (this.match(TokenType.EQUAL)) {
             expr = this.expression();
@@ -314,15 +335,20 @@ export class Parser {
         return new Stmt.Slagi(condition, block);
     }
 
+    rubahStmt() {
+        let id = this.valuable();
+        this.eat(TokenType.EQUAL, "Mengharapkan '=' setelah variable yang ingin di-'rubah'.");
+        let expr = this.expression();
+        return new Stmt.Rubah(id, expr);
+    }
+
     statement() {
         if(this.match(TokenType.CETAK)) {
             return this.cetakStmt();
         } else if (this.match(TokenType.ID)) {
-            let id = this.identifier();
+            let id = this.valuable();
             if(this.check(TokenType.ID) || this.check(TokenType.LESS || this.check(TokenType.TETAP))) {
                 return this.datumStmt(id);
-            } else if (this.match(TokenType.LPAREN)) {
-                return this.functionCallExpr(id);
             }
         } else if (this.match(TokenType.KERJA)){
             return new Stmt.Kerja(this.expression());
@@ -338,13 +364,15 @@ export class Parser {
             return new Stmt.Henti();
         } else if (this.match(TokenType.LEWAT)) {
             return new Stmt.Lewat();
+        } else if (this.match(TokenType.RUBAH)) {
+            return this.rubahStmt();
         } else {
-            this.error(`Statement tidak bisa diawali '${this.see().lexeme}'`);
+            this.error(`Statement tidak bisa diawali '${this.see().lexeme}'.`);
         }
     }
 
     error(errmsg) {
-        throw new SimplParserError(`Error: [Baris ${this.see().line}] ` + errmsg);
+        throw new SimplParserError(`Error: [Baris ${this.see().line}] ` + errmsg + ` Menemukan '${this.see().lexeme}'.`);
     }
 
     parse(tokens) {

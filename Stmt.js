@@ -32,7 +32,7 @@ export class Datum extends StmtBase {
 }
 
 export class Type extends StmtBase {
- // Identifier type, bool tetap, Array<Stmt.Type> contents
+ // Member type, bool tetap, Array<Stmt.Type> contents
     constructor (type, tetap, contents) {
         super();
         this.type = type;
@@ -128,6 +128,19 @@ export class Lewat extends StmtBase {
 
     visit(visitor) {
         return visitor.visitLewatStmt(this);
+    }
+}
+
+export class Rubah extends StmtBase {
+ // Expr.ExprBase variable, Expr.ExprBase value
+    constructor (variable, value) {
+        super();
+        this.variable = variable;
+        this.value = value;
+    }
+
+    visit(visitor) {
+        return visitor.visitRubahStmt(this);
     }
 }
 

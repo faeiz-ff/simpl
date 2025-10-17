@@ -56,12 +56,24 @@ export class Grouping extends ExprBase {
     }
 }
 
-export class Identifier extends ExprBase {
- // Token main, Expr.Identifier member
+export class Member extends ExprBase {
+ // Expr.ExprBase main, Expr.Member member
     constructor (main, member) {
         super();
         this.main = main;
         this.member = member;
+    }
+
+    visit(visitor) {
+        return visitor.visitMemberExpr(this);
+    }
+}
+
+export class Identifier extends ExprBase {
+ // Token token
+    constructor (token) {
+        super();
+        this.token = token;
     }
 
     visit(visitor) {
@@ -70,7 +82,7 @@ export class Identifier extends ExprBase {
 }
 
 export class Lambda extends ExprBase {
- // Array<Stmt.Types-Expr.Identifier> params, Stmt.Type returnValue, Stmt.Block block
+ // Array<Stmt.Types-Expr.Member> params, Stmt.Type returnValue, Stmt.Block block
     constructor (params, returnValue, block) {
         super();
         this.params = params;
@@ -97,7 +109,7 @@ export class Call extends ExprBase {
 }
 
 export class Array extends ExprBase {
- // Array<Expr.Base> contents
+ // Array<Expr.ExprBase> contents
     constructor (contents) {
         super();
         this.contents = contents;
@@ -105,6 +117,19 @@ export class Array extends ExprBase {
 
     visit(visitor) {
         return visitor.visitArrayExpr(this);
+    }
+}
+
+export class Index extends ExprBase {
+ // Expr.ExprBase iterable, Expr.ExprBase index
+    constructor (iterable, index) {
+        super();
+        this.iterable = iterable;
+        this.index = index;
+    }
+
+    visit(visitor) {
+        return visitor.visitIndexExpr(this);
     }
 }
 

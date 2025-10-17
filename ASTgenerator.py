@@ -97,16 +97,18 @@ def main():
         "Unary      : Token op, Expr.ExprBase right",
         "Literal    : Token token",
         "Grouping   : Expr.ExprBase expression",
-        "Identifier : Token main, Expr.Identifier member",
-        "Lambda     : Array<Stmt.Types-Expr.Identifier> params, Stmt.Type returnValue, Stmt.Block block",
+        "Member     : Expr.ExprBase main, Expr.Member member",
+        "Identifier : Token token",
+        "Lambda     : Array<Stmt.Types-Expr.Member> params, Stmt.Type returnValue, Stmt.Block block",
         "Call       : Expr.ExprBase callable, Expr.ExprBase args",
-        "Array      : Array<Expr.Base> contents",
+        "Array      : Array<Expr.ExprBase> contents",
+        "Index      : Expr.ExprBase iterable, Expr.ExprBase index"
     ])
 
     writeAST("Stmt", [ # Statements should't return anything
         "Cetak : Expr.ExprBase expr",
         "Datum : Stmt.Type type, Token name, Expr.ExprBase expr",
-        "Type  : Identifier type, bool tetap, Array<Stmt.Type> contents", # type is a statement so that the lambdas work :')
+        "Type  : Member type, bool tetap, Array<Stmt.Type> contents",
         "Kerja : Expr.ExprBase expr",
         "Block : Array<Stmt.StmtBase> statements",
         "Kalau : Expr.ExprBase condition, Stmt.Block thenBlock, Stmt.Kalau elseKalau",
@@ -114,6 +116,7 @@ def main():
         "Slagi : Expr.ExprBase condition, Stmt.Block block",
         "Henti",
         "Lewat",
+        "Rubah : Expr.ExprBase variable, Expr.ExprBase value",
     ])
 
 if __name__ == "__main__":
