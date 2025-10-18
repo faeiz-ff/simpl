@@ -1,4 +1,1 @@
-let f = ()=>a=>a;
-f = (()=>f)();
-f = f()(1);
-console.log(f);
+console.log(1 + 1 + 4 * (7 / 6));

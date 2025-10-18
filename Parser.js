@@ -71,25 +71,28 @@ export class Parser {
         return new Expr.Call(callable, args);
     }
 
-    lambda(firstType) {
+    lambda() {
         let params = [];
-        if (firstType) {
-            let type = this.typeStmt(firstType);
-            this.eat(TokenType.ID, "Mengharapkan Nama setelah deklarasi Tipe dalam Lamda.");
-            let name = this.previous();
-            params.push([type, name]);
-        }
-        while(this.match(TokenType.COMMA)) {
+        this.eat(TokenType.LPAREN, "Mengharapkan '(' setelah '=>' untuk deklarasi Lamda.")
+        if (this.match(TokenType.ID)) {
             let type = this.typeStmt();
-            this.eat(TokenType.ID, "Mengharapkan Nama setelah deklarasi Tipe dalam Lamda.");
+            this.eat(TokenType.ID, "Mengharapkan Nama parameter setelah deklarasi Tipe parameter dalam Lamda.");
             let name = this.previous();
             params.push([type, name]);
+                
+            while(this.match(TokenType.COMMA)) {
+                let type = this.typeStmt();
+                this.eat(TokenType.ID, "Mengharapkan Nama parameter setelah deklarasi Tipe parameter dalam Lamda.");
+                let name = this.previous();
+                params.push([type, name]);
+            }
         }
 
         this.eat(TokenType.RPAREN, "Mengharapkan ')' setelah deklarasi parameter Lamda.");
-
-        this.eat(TokenType.ID, "Mengharapkan Tipe hasil Lamda.");
-        let returnType = this.typeStmt();
+        let returnType = null;
+        if (this.match(TokenType.ID)) {
+            returnType = this.typeStmt();
+        }
         this.eat(TokenType.LCURLY, "Mengharapkan Blok { } untuk Lamda.");
         let block = this.blockStmt();
 
@@ -122,27 +125,24 @@ export class Parser {
 
     primary() {
         if (this.match(TokenType.LPAREN)) {
-            if (this.check(TokenType.RPAREN)) {
-                return this.lambda();
-            }
             let expr = this.expression();
-            if (this.check(TokenType.LESS) || this.check(TokenType.ID)) {
-                return this.lambda(expr);
-            } 
             this.eat(TokenType.RPAREN, "Mengharapkan ')' untuk mengakhiri ekspresi kurung");
             return new Expr.Grouping(expr);
         } else if (this.match(TokenType.LITERAL)){
-            let literal = this.previous();
-            return new Expr.Literal(literal);
+            return new Expr.Literal(this.previous());
         } else if (this.match(TokenType.ID)) {
-            return this.valuable();
+            return this.identifier();
+        } else if (this.match(TokenType.ARROW)) {
+            return this.lambda();
+        } else if (this.match(TokenType.LSQUARE)) {
+            return this.arrayExpr();
         }
         
         this.error("Mengharapkan Ekspresi valid.")
     }
 
     valuable() {
-        let result = this.identifier();
+        let result = this.primary();
 
         while(true) {
             if (this.match(TokenType.LPAREN)) {
@@ -165,7 +165,7 @@ export class Parser {
             let right = this.unary();
             return new Expr.Unary(op, right);
         } else {
-            return this.primary();
+            return this.valuable();
         }
     }
 
@@ -184,7 +184,7 @@ export class Parser {
 
         while(this.match(TokenType.STAR, TokenType.SLASH)) {
             let op = this.previous();
-            let right = this.primary();
+            let right = this.unary();
             expr = new Expr.Binary(expr, op, right);
         }
 
@@ -248,41 +248,42 @@ export class Parser {
         return new Stmt.Cetak(expr);
     }
 
-    typeStmt(type) {
-        if (!type) type = this.valuable();
+    typeStmt() {
+        let type = this.identifier();
+        while (this.match(TokenType.DOT)) {
+            type = this.member(type);
+        }
+
         let contents = [];
         if (this.match(TokenType.LESS)) {
-            this.eat(TokenType.ID, "Mengharapkan Tipe didalam < >.");
-            let childType = this.typeStmt();
-            contents.push(childType);
+            this.eat(TokenType.ID, "Mengharapkan Tipe di dalam < spesifikasi Tipe >.");
+            let innerType = this.typeStmt();
+            contents.push(innerType);
 
             while(this.match(TokenType.COMMA)) {
-                this.eat(TokenType.ID , "Mengharapkan Tipe di dalam < >.");
-                childType = this.typeStmt();
-                contents.push(childType);
+                this.eat(TokenType.ID, "Mengharapkan Tipe setelah ',' di dalam < spesifikasi Tipe >.");
+                innerType = this.typeStmt();
+                contents.push(innerType);
             }
 
-            this.eat(TokenType.GREATER, "Mengharapkan '>' untuk mengakhiri deklarasi Tipe.");
+            this.eat(TokenType.GREATER, "Mengharapkan '>' setelah spesifikasi Tipe.");
         }
 
         let tetap = false;
         if (this.match(TokenType.TETAP)) {
-            tetap = true
+            tetap = true;
         }
-
         return new Stmt.Type(type, tetap, contents);
     }
 
-    datumStmt(firstId) {
-        let type = this.typeStmt(firstId);
-        console.log(type);
+    datumStmt() {
+        let type = this.typeStmt();
         this.eat(TokenType.ID, "Mengharapkan Nama pada deklarasi variabel.");
-        let id = this.identifier();
+        let id = this.previous();
         let expr = null;
         if (this.match(TokenType.EQUAL)) {
             expr = this.expression();
         }
-
         return new Stmt.Datum(type, id, expr);
     }
 
@@ -346,11 +347,8 @@ export class Parser {
         if(this.match(TokenType.CETAK)) {
             return this.cetakStmt();
         } else if (this.match(TokenType.ID)) {
-            let id = this.valuable();
-            if(this.check(TokenType.ID) || this.check(TokenType.LESS || this.check(TokenType.TETAP))) {
-                return this.datumStmt(id);
-            }
-        } else if (this.match(TokenType.KERJA)){
+            return this.datumStmt();
+        } else if (this.match(TokenType.KERJA)) {
             return new Stmt.Kerja(this.expression());
         } else if (this.match(TokenType.KALAU)) {
             return this.kalauStmt();
@@ -366,6 +364,8 @@ export class Parser {
             return new Stmt.Lewat();
         } else if (this.match(TokenType.RUBAH)) {
             return this.rubahStmt();
+        } else if (this.match(TokenType.HASIL)) {
+            return new Stmt.Hasil(this.expression());
         } else {
             this.error(`Statement tidak bisa diawali '${this.see().lexeme}'.`);
         }
@@ -380,7 +380,6 @@ export class Parser {
         this.tree = []
         try {
             while(!this.match(TokenType.EOF)) {
-                console.log("")
                 this.tree.push(this.statement());
             }
         } catch (err) {

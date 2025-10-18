@@ -55,7 +55,8 @@ export const
     RSQUARE = 35,
     PIPE = 36,
     AMPERSAND = 37,
-    BANG = 38;
+    BANG = 38,
+    ARROW = 39;
 
 export const TOKEN_STRING = [
     "RUBAH", 
@@ -97,4 +98,5 @@ export const TOKEN_STRING = [
     "PIPE",
     "AMPERSAND",
     "BANG",
+    "ARROW",
 ];

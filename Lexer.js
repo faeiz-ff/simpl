@@ -26,8 +26,8 @@ export class Lexer {
         return this.text[this.charIndex];
     }
 
-    peek() {
-        return this.isAtEnd() ? null : this.text[this.charIndex+1];
+    peek(num = 1) {
+        return this.isAtEnd() ? null : this.text[this.charIndex+num];
     }
 
     isAlpha(char) {
@@ -175,9 +175,14 @@ export class Lexer {
                 return this.makeToken(TokenType.LESS);
 
             case "=": 
-                if (this.peek() === "=") {
+                if (this.peek() === "=" && this.peek(2) === ">") {
+                    return this.makeToken(TokenType.EQUAL);
+                } else if (this.peek() === "=") {
                     this.advance();
                     return this.makeToken(TokenType.EQUAL_EQUAL);
+                } else if (this.peek() === ">") {
+                    this.advance();
+                    return this.makeToken(TokenType.ARROW);
                 }
                 return this.makeToken(TokenType.EQUAL);
 
@@ -185,7 +190,7 @@ export class Lexer {
         }
         if (this.isAtEnd()) return;
 
-        this.errors.push(new SimplLexerError(`[Line ${this.lineIndex}] invalid character ${this.see()}`));
+        this.errors.push(new SimplLexerError(`[Baris ${this.lineIndex}] karakter tidak valid. Menemukan ${this.see()}`));
         this.advance();
     }
 

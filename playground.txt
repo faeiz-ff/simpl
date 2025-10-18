@@ -29,3 +29,42 @@ syntax =
     mesin kuadrat = (angka a) angka { hasil a*a }
     angka lima = kuadrat(5) + 2 + ()
     function(realll)
+
+parent.member()
+parent().member()[1]
+
+identifier = name
+valuable = identifier | arrayIndex | functionCall
+arrayIndex = valuable '[' expression ']'
+functionCall = valuable '(' (expr ( ',' expr)*)? ')'
+member = expression ( '.' valuable )*
+
+
+- class.fun()
+
+class.fun
+class.fun()
+
+-class.fun()
+
+() angka {
+    hasil 5
+} ()
+
+->()type{}
+
+=> (angka a) angka { hasil a }
+
+mesin double ==> (mesin f, datum n) datum { 
+    hasil f(f(n))
+}
+
+cetak double(square, 5)
+
+angka asdf[] = [1,2,3,4,5]
+
+
+angka dede = 6
+
+cetak dede
+

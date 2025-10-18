@@ -75,6 +75,14 @@ function deepPrint(value, indent = 0, visited = new WeakSet()) {
 let simp = new Simpl();
 simp.runCode
 (`
-    Float.IEE353() spesial = (real) + nope - real()() * 8
+  mesin double ==> (angka a) angka {
+    hasil a + a
+  }
 
-    `);
+  baris tetap container = [
+    => () angka { hasil 1 } (),
+    1 + 1,
+    double(2)
+  ]
+  
+`);

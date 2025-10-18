@@ -82,7 +82,7 @@ export class Identifier extends ExprBase {
 }
 
 export class Lambda extends ExprBase {
- // Array<Stmt.Types-Expr.Member> params, Stmt.Type returnValue, Stmt.Block block
+ // Array<Stmt.Types-Token> params, Stmt.Type returnValue, Stmt.Block block
     constructor (params, returnValue, block) {
         super();
         this.params = params;

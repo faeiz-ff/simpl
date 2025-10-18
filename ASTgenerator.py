@@ -88,7 +88,7 @@ def main():
             "slash", "lparen", "rparen", "greater", "greater_equal",
             "less", "less_equal", "equal", "equal_equal", "dot", "lcurly",
             "rcurly", "comma", "lsquare", "rsquare", "pipe", "ampersand",
-            "bang",
+            "bang", "arrow",
         ]
     )
 
@@ -99,7 +99,7 @@ def main():
         "Grouping   : Expr.ExprBase expression",
         "Member     : Expr.ExprBase main, Expr.Member member",
         "Identifier : Token token",
-        "Lambda     : Array<Stmt.Types-Expr.Member> params, Stmt.Type returnValue, Stmt.Block block",
+        "Lambda     : Array<Stmt.Types-Token> params, Stmt.Type returnValue, Stmt.Block block",
         "Call       : Expr.ExprBase callable, Expr.ExprBase args",
         "Array      : Array<Expr.ExprBase> contents",
         "Index      : Expr.ExprBase iterable, Expr.ExprBase index"
@@ -108,7 +108,7 @@ def main():
     writeAST("Stmt", [ # Statements should't return anything
         "Cetak : Expr.ExprBase expr",
         "Datum : Stmt.Type type, Token name, Expr.ExprBase expr",
-        "Type  : Member type, bool tetap, Array<Stmt.Type> contents",
+        "Type  : Expr.ExprBase type, bool tetap, Array<Stmt.Type> contents", 
         "Kerja : Expr.ExprBase expr",
         "Block : Array<Stmt.StmtBase> statements",
         "Kalau : Expr.ExprBase condition, Stmt.Block thenBlock, Stmt.Kalau elseKalau",
@@ -117,6 +117,7 @@ def main():
         "Henti",
         "Lewat",
         "Rubah : Expr.ExprBase variable, Expr.ExprBase value",
+        "Hasil : Expr.ExprBase expr",
     ])
 
 if __name__ == "__main__":
