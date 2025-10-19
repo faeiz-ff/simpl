@@ -106,6 +106,7 @@ export class Parser {
 
         let contents = [];
         do {
+            if (this.check(TokenType.RSQUARE)) break;
             let expr = this.expression();
             contents.push(expr);
         } while (this.match(TokenType.COMMA))
@@ -256,7 +257,7 @@ export class Parser {
 
         let contents = [];
         if (this.match(TokenType.LESS)) {
-            this.eat(TokenType.ID, "Mengharapkan Tipe di dalam < spesifikasi Tipe >.");
+            this.eat(TokenType.ID, "Mengharapkan Tipe setelah '<' di dalam < spesifikasi Tipe >.");
             let innerType = this.typeStmt();
             contents.push(innerType);
 
@@ -278,7 +279,7 @@ export class Parser {
 
     datumStmt() {
         let type = this.typeStmt();
-        this.eat(TokenType.ID, "Mengharapkan Nama pada deklarasi variabel.");
+        this.eat(TokenType.ID, "Mengharapkan Nama setelah Tipe pada deklarasi variabel.");
         let id = this.previous();
         let expr = null;
         if (this.match(TokenType.EQUAL)) {
@@ -292,7 +293,7 @@ export class Parser {
             this.error("Mengharapkan ekspresi setelah 'kalau'.");
         }
         let condition = this.expression();
-        this.eat(TokenType.LCURLY, "Mengharapkan blok { } untuk Statement 'kalau'.");
+        this.eat(TokenType.LCURLY, "Mengharapkan blok { } setelah kondisi untuk Statement 'kalau'.");
         let block = this.blockStmt();
         let elseKalau = null;
 
@@ -321,7 +322,7 @@ export class Parser {
 
         let iterable = this.expression();
 
-        this.eat(TokenType.LCURLY, "Mengharapkan Blok { } pada statement 'untuk'.");
+        this.eat(TokenType.LCURLY, "Mengharapkan Blok { } setelah kondisi pada statement 'untuk'.");
         let block = this.blockStmt();
 
         return new Stmt.Untuk(varType, varName, iterable, block);
@@ -330,7 +331,7 @@ export class Parser {
     slagiStmt() {
         let condition = this.expression();
 
-        this.eat(TokenType.LCURLY, "Mengharapkan Blok { } pada statement 'untuk'.");
+        this.eat(TokenType.LCURLY, "Mengharapkan Blok { } setelah kondisi pada statement 'slagi'.");
         let block = this.blockStmt();
 
         return new Stmt.Slagi(condition, block);
@@ -341,6 +342,49 @@ export class Parser {
         this.eat(TokenType.EQUAL, "Mengharapkan '=' setelah variable yang ingin di-'rubah'.");
         let expr = this.expression();
         return new Stmt.Rubah(id, expr);
+    }
+
+    jenisStmt() {
+        this.eat(TokenType.ID, "Mengharapkan Nama Jenis setelah 'jenis'.");
+        let id = this.previous();
+        this.eat(TokenType.LPAREN, "Mengharapkan '(' setelah deklarasi Nama Jenis.");
+        if (this.check(TokenType.RPAREN)) {
+            this.error("Isian Jenis tidak boleh kosong.");
+        }   
+        let enums = []
+        do {
+            this.eat(TokenType.ID, "Mengharapkan macam jenis dalam 'jenis'.");
+            let enumb = this.previous();
+            enums.push(enumb);
+        } while(this.match(TokenType.COMMA))
+
+        this.eat(TokenType.RPAREN, "Mengharapkan ')' untuk mengakhiri deklarasi 'jenis'.")
+
+        return new Stmt.Jenis(id, enums);
+    }
+
+    modelStmt() {
+        this.eat(TokenType.ID, "Mengharapkan Nama Model setelah 'model'.");
+        let id = this.previous();
+
+        this.eat(TokenType.LPAREN, "Mengharapkan '(' setelah Nama Model dalam 'model'.");
+        if (this.check(TokenType.RPAREN)) {
+            this.error("Model tidak boleh tanpa isian.");
+        }
+        
+        let contents = [];
+        do {
+            this.eat(TokenType.ID, "Mengharapkan Tipe member dalam deklarasi 'model'.");
+            let type = this.typeStmt();
+            this.eat(TokenType.ID, "Mengharapkan Nama member dalam deklarasi 'model'.");
+            let memberName = this.previous();
+
+            contents.push([type, memberName]);
+        } while(this.match(TokenType.COMMA))
+
+        this.eat(TokenType.RPAREN, "Mengharapkan ')' untuk mengakhiri deklarasi 'model'.");
+
+        return new Stmt.Model(id, contents);
     }
 
     statement() {
@@ -366,13 +410,17 @@ export class Parser {
             return this.rubahStmt();
         } else if (this.match(TokenType.HASIL)) {
             return new Stmt.Hasil(this.expression());
+        } else if (this.match(TokenType.JENIS)) {
+            return this.jenisStmt();
+        } else if (this.match(TokenType.MODEL)) {
+            return this.modelStmt();
         } else {
             this.error(`Statement tidak bisa diawali '${this.see().lexeme}'.`);
         }
     }
 
     error(errmsg) {
-        throw new SimplParserError(`Error: [Baris ${this.see().line}] ` + errmsg + ` Menemukan '${this.see().lexeme}'.`);
+        throw new SimplParserError(`Error Penulisan: [Baris ${this.see().line}] ` + errmsg + ` Menemukan '${this.see().lexeme}'.`);
     }
 
     parse(tokens) {

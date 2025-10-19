@@ -1,5 +1,8 @@
 
 def writeAST(name, derived_list):
+    # i do not know how this works, it works, i made it myself
+    # but i do not know how this works, but it works.
+    # this will make a file with structured AST based on the params
     s = []
     def add(st): s.append(st + '\n')
     add("")
@@ -108,7 +111,7 @@ def main():
     writeAST("Stmt", [ # Statements should't return anything
         "Cetak : Expr.ExprBase expr",
         "Datum : Stmt.Type type, Token name, Expr.ExprBase expr",
-        "Type  : Expr.ExprBase type, bool tetap, Array<Stmt.Type> contents", 
+        "Type  : Expr.ExprBase type, bool tetap, Array<Stmt.Type> contents", # Doesnt make sense if expr, because <> will be parsed differently
         "Kerja : Expr.ExprBase expr",
         "Block : Array<Stmt.StmtBase> statements",
         "Kalau : Expr.ExprBase condition, Stmt.Block thenBlock, Stmt.Kalau elseKalau",
@@ -117,7 +120,9 @@ def main():
         "Henti",
         "Lewat",
         "Rubah : Expr.ExprBase variable, Expr.ExprBase value",
-        "Hasil : Expr.ExprBase expr",
+        "Hasil : Expr.ExprBase expr", # lol ironic
+        "Jenis : Token name, Array<Token> enums",
+        "Model : Token name, Array<Stmt.Type-Token> contents",
     ])
 
 if __name__ == "__main__":

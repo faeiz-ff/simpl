@@ -68,3 +68,54 @@ angka dede = 6
 
 cetak dede
 
+reFinal design on Type checks {
+    for mesin, resultant type can be read in the lambda
+        if omitted, its nihil (void functions)
+    for baris, contents type will be evaluated by the first valuable
+        if type isnt specified, defaults to Datum
+        but if specified, will typechecks all of the contents        
+        baris will evaluate all contents before saving it into memory
+
+    datum is an Any-type type.
+    it can hold any types of value, but every data still have typechecks
+
+    datum a = 10 # underlying type of angka
+    angka b = 20
+    
+    cetak a + b # prints 30
+
+    datum c = "hola" # underlying type of petik
+    cetak a + c # Type error
+    baris<angka> prima = [c] # type error
+    baris apapun = [c, 234] # succeeds
+
+    so we actually apply a type from the value to the identifier
+    angka asdf = "asdf" 
+    # value type petik, identifier type angka, compileError
+    
+    datum real = 10
+    rubah real = "petik"
+    # no problemo
+
+    angka tiga = 3
+    rubah tiga = "tiga"
+    # type error
+
+    datum simply doesnt care about the type
+    we could write type unsafe program in Simpl
+
+    if assignment (=) is ommited, value is nihil.
+    datum a
+    datum b = 2234
+    cetak a # prints nihil
+
+    if a type got a tetap modifier, it cannot be re-assigned or modified
+        the contents too, unless they have the bebas modifier # its todo
+
+    datum tetap a = 10
+    angka tetap a = 10 
+    # Literally the same
+
+    tetap-ed type must be initialized with a value
+    
+}

@@ -156,3 +156,29 @@ export class Hasil extends StmtBase {
     }
 }
 
+export class Jenis extends StmtBase {
+ // Token name, Array<Token> enums
+    constructor (name, enums) {
+        super();
+        this.name = name;
+        this.enums = enums;
+    }
+
+    visit(visitor) {
+        return visitor.visitJenisStmt(this);
+    }
+}
+
+export class Model extends StmtBase {
+ // Token name, Array<Stmt.Type-Token> contents
+    constructor (name, contents) {
+        super();
+        this.name = name;
+        this.contents = contents;
+    }
+
+    visit(visitor) {
+        return visitor.visitModelStmt(this);
+    }
+}
+

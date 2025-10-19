@@ -75,14 +75,10 @@ function deepPrint(value, indent = 0, visited = new WeakSet()) {
 let simp = new Simpl();
 simp.runCode
 (`
-  mesin double ==> (angka a) angka {
-    hasil a + a
-  }
-
-  baris tetap container = [
-    => () angka { hasil 1 } (),
-    1 + 1,
-    double(2)
-  ]
-  
+  jenis ayam (
+    goreng,
+    bakar,
+    hidup
+  )
+  angka baru = 10
 `);
