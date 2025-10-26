@@ -1,3 +1,4 @@
+import { Interpreter } from "./Interpreter.js";
 import { Lexer } from "./Lexer.js";
 import { Parser } from "./Parser.js";
 
@@ -11,7 +12,10 @@ class Simpl {
         let tokens = lexer.scanTokens(code);
         let parser = new Parser();
         let tree = parser.parse(tokens);
-        deepPrint(tree);
+        let inter = new Interpreter();
+        if (tree) {
+          inter.interpret(tree);
+        }
     }
 
     static error(what, line) {
@@ -75,10 +79,6 @@ function deepPrint(value, indent = 0, visited = new WeakSet()) {
 let simp = new Simpl();
 simp.runCode
 (`
-  jenis ayam (
-    goreng,
-    bakar,
-    hidup
-  )
-  angka baru = 10
+  logis real = salah
+  cetak real
 `);

@@ -182,3 +182,15 @@ export class Model extends StmtBase {
     }
 }
 
+export class Simpl extends StmtBase {
+ // Array<Stmt.StmtBase> statements
+    constructor (statements) {
+        super();
+        this.statements = statements;
+    }
+
+    visit(visitor) {
+        return visitor.visitSimplStmt(this);
+    }
+}
+

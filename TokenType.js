@@ -56,7 +56,8 @@ export const
     PIPE = 36,
     AMPERSAND = 37,
     BANG = 38,
-    ARROW = 39;
+    ARROW = 39,
+    BANG_EQUAL = 40;
 
 export const TOKEN_STRING = [
     "RUBAH", 
@@ -99,4 +100,5 @@ export const TOKEN_STRING = [
     "AMPERSAND",
     "BANG",
     "ARROW",
+    "BANG_EQUAL",
 ];

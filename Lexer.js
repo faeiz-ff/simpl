@@ -73,7 +73,6 @@ export class Lexer {
         }
 
         tokens.push(new Token(TokenType.EOF, null, null, this.lineIndex));
-        this.debugPrintTokens(tokens);
 
         this.tokens = tokens;
         return this.tokens;
@@ -120,7 +119,8 @@ export class Lexer {
         this.advance();
         while(!this.isAtEnd() && this.see() !== '"') this.advance();
         this.advance();
-        return new Token(TokenType.LITERAL, this.parseLexeme(), this.parseLexeme(), this.lineIndex);
+        let lexeme = this.parseLexeme();
+        return new Token(TokenType.LITERAL, lexeme, lexeme.slice(1, lexeme.length-1), this.lineIndex);
     }
 
     comment() {
@@ -159,7 +159,12 @@ export class Lexer {
             case "]": return this.makeToken(TokenType.RSQUARE);
             case "|": return this.makeToken(TokenType.PIPE);
             case "&": return this.makeToken(TokenType.AMPERSAND);
-            case "!": return this.makeToken(TokenType.BANG);
+            case "!": 
+                if (this.peek() === "=") {
+                    this.advance();
+                    return this.makeToken(TokenType.BANG_EQUAL);
+                }
+                return this.makeToken(TokenType.BANG);
 
             case ">": 
                 if (this.peek() === "=") {

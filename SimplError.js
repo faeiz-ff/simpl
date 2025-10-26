@@ -1,8 +1,8 @@
 // Errors
 export class SimplError extends Error {
-    constructor(errmsg) {
+    constructor(msg) {
         super(null);
-        this.errmsg = errmsg;
+        this.msg = msg;
     }
 };
 export class SimplRuntimeError extends SimplError {};

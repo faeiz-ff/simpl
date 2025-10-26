@@ -207,7 +207,7 @@ export class Parser {
     equality() {
         let expr = this.term();
 
-        while(this.match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL, TokenType.EQUAL_EQUAL)) {
+        while(this.match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL, TokenType.EQUAL_EQUAL, TokenType.BANG_EQUAL)) {
             let op = this.previous();
             let right = this.term();
             expr = new Expr.Binary(expr, op, right);
@@ -241,7 +241,7 @@ export class Parser {
     }
 
     expression() {
-        return this.equality();
+        return this.orTerm();
     }
 
     cetakStmt() {
@@ -251,24 +251,24 @@ export class Parser {
 
     typeStmt() {
         let type = this.identifier();
-        while (this.match(TokenType.DOT)) {
-            type = this.member(type);
-        }
+        // while (this.match(TokenType.DOT)) {
+        //     type = this.member(type);
+        // }
 
         let contents = [];
-        if (this.match(TokenType.LESS)) {
-            this.eat(TokenType.ID, "Mengharapkan Tipe setelah '<' di dalam < spesifikasi Tipe >.");
-            let innerType = this.typeStmt();
-            contents.push(innerType);
+        // if (this.match(TokenType.LESS)) {
+        //     this.eat(TokenType.ID, "Mengharapkan Tipe setelah '<' di dalam < spesifikasi Tipe >.");
+        //     let innerType = this.typeStmt();
+        //     contents.push(innerType);
 
-            while(this.match(TokenType.COMMA)) {
-                this.eat(TokenType.ID, "Mengharapkan Tipe setelah ',' di dalam < spesifikasi Tipe >.");
-                innerType = this.typeStmt();
-                contents.push(innerType);
-            }
+        //     // while(this.match(TokenType.COMMA)) {
+        //     //     this.eat(TokenType.ID, "Mengharapkan Tipe setelah ',' di dalam < spesifikasi Tipe >.");
+        //     //     innerType = this.typeStmt();
+        //     //     contents.push(innerType);
+        //     // }
 
-            this.eat(TokenType.GREATER, "Mengharapkan '>' setelah spesifikasi Tipe.");
-        }
+        //     this.eat(TokenType.GREATER, "Mengharapkan '>' setelah spesifikasi Tipe.");
+        // }
 
         let tetap = false;
         if (this.match(TokenType.TETAP)) {
@@ -293,7 +293,7 @@ export class Parser {
             this.error("Mengharapkan ekspresi setelah 'kalau'.");
         }
         let condition = this.expression();
-        this.eat(TokenType.LCURLY, "Mengharapkan blok { } setelah kondisi untuk Statement 'kalau'.");
+        this.eat(TokenType.LCURLY, "Mengharapkan blok { } setelah kondisi untuk pernyataan 'kalau'.");
         let block = this.blockStmt();
         let elseKalau = null;
 
@@ -316,13 +316,13 @@ export class Parser {
     untukStmt() {
         this.eat(TokenType.ID, "Mengharapkan Tipe variabel untuk diinisialisasi setelah 'untuk'.")
         let varType = this.typeStmt();
-        this.eat(TokenType.ID, "Mengharapkan Nama variabel setelah Tipe dalam statement 'untuk'.");
+        this.eat(TokenType.ID, "Mengharapkan Nama variabel setelah Tipe dalam pernyataan 'untuk'.");
         let varName = this.previous();
-        this.eat(TokenType.DALAM, "Mengharapkan 'dalam' setelah deklarasi variabel pada statement 'untuk'.");
+        this.eat(TokenType.DALAM, "Mengharapkan 'dalam' setelah deklarasi variabel pada pernyataan 'untuk'.");
 
         let iterable = this.expression();
 
-        this.eat(TokenType.LCURLY, "Mengharapkan Blok { } setelah kondisi pada statement 'untuk'.");
+        this.eat(TokenType.LCURLY, "Mengharapkan Blok { } setelah kondisi pada pernyataan 'untuk'.");
         let block = this.blockStmt();
 
         return new Stmt.Untuk(varType, varName, iterable, block);
@@ -331,7 +331,7 @@ export class Parser {
     slagiStmt() {
         let condition = this.expression();
 
-        this.eat(TokenType.LCURLY, "Mengharapkan Blok { } setelah kondisi pada statement 'slagi'.");
+        this.eat(TokenType.LCURLY, "Mengharapkan Blok { } setelah kondisi pada pernyataan 'slagi'.");
         let block = this.blockStmt();
 
         return new Stmt.Slagi(condition, block);
@@ -349,7 +349,7 @@ export class Parser {
         let id = this.previous();
         this.eat(TokenType.LPAREN, "Mengharapkan '(' setelah deklarasi Nama Jenis.");
         if (this.check(TokenType.RPAREN)) {
-            this.error("Isian Jenis tidak boleh kosong.");
+            this.error("Isian Jenis tidak boleh kosong.", false);
         }   
         let enums = []
         do {
@@ -369,7 +369,7 @@ export class Parser {
 
         this.eat(TokenType.LPAREN, "Mengharapkan '(' setelah Nama Model dalam 'model'.");
         if (this.check(TokenType.RPAREN)) {
-            this.error("Model tidak boleh tanpa isian.");
+            this.error("Model tidak boleh tanpa isian.", false);
         }
         
         let contents = [];
@@ -411,28 +411,37 @@ export class Parser {
         } else if (this.match(TokenType.HASIL)) {
             return new Stmt.Hasil(this.expression());
         } else if (this.match(TokenType.JENIS)) {
-            return this.jenisStmt();
+            this.error(`Pernyataan 'jenis' harus diletakkan di luar blok.`, false);
         } else if (this.match(TokenType.MODEL)) {
-            return this.modelStmt();
+            this.error(`Pernyataan 'model' harus diletakkan di luar blok.`, false);
         } else {
-            this.error(`Statement tidak bisa diawali '${this.see().lexeme}'.`);
+            this.error(`Pernyataan tidak bisa diawali '${this.see().lexeme}'.`, false);
         }
     }
 
-    error(errmsg) {
-        throw new SimplParserError(`Error Penulisan: [Baris ${this.see().line}] ` + errmsg + ` Menemukan '${this.see().lexeme}'.`);
+    error(errmsg, found = true) {
+        throw new SimplParserError(`Error Penulisan: [Baris ${this.see().line}] ` + errmsg + ((found) ? ` Menemukan '${this.see().lexeme }'.` : ""));
     }
 
     parse(tokens) {
         this.tokens = tokens;
-        this.tree = []
+        let treeList = [];
         try {
             while(!this.match(TokenType.EOF)) {
-                this.tree.push(this.statement());
+                if (this.match(TokenType.JENIS)) {
+                    treeList.push(this.jenisStmt());
+                    continue;
+                } else if (this.match(TokenType.MODEL)) {
+                    treeList.push(this.modelStmt());
+                    continue;
+                }
+                treeList.push(this.statement());
             }
         } catch (err) {
-            console.log(err.errmsg);
+            console.log(err.msg);
+            return null;
         }
+        this.tree = new Stmt.Simpl(treeList);
         return this.tree;
     }
 }

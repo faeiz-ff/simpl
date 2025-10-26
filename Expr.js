@@ -45,10 +45,10 @@ export class Literal extends ExprBase {
 }
 
 export class Grouping extends ExprBase {
- // Expr.ExprBase expression
-    constructor (expression) {
+ // Expr.ExprBase expr
+    constructor (expr) {
         super();
-        this.expression = expression;
+        this.expr = expr;
     }
 
     visit(visitor) {

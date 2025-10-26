@@ -119,3 +119,35 @@ reFinal design on Type checks {
     tetap-ed type must be initialized with a value
     
 }
+
+reFinal design on Member {
+    member is a this notation main.member
+    member can be accessed from any expression that returns a value
+    "123".toInt().toStr();
+    "123" # petik
+      .toInt() # petik accessing class property toInt() returns angka
+      .toStr() # angka accessing class property toStr() returns petik
+
+    we can define such functions in a global environment
+}
+
+reFinal design on Variable {
+    when initializing a variable, 
+        we evaluate the expression first,
+        then typecheck that value, into the datum's type, 
+        only then we assign it to memory.
+}
+
+design on types {
+    all types have their own operator defined for manipulation
+    built-in types operator functions cant be overriden
+
+    for simplicity purposes, lets ignore underlying types for now
+}
+
+petik <- search in environment, what it is
+oh its of type petik! send the value (of type) back, 
+    and infer what are you doing with it?
+i can do type DOT member,  for static functions / moduls
+or i can instantiate a variable with whatever type symbol it is
+-> so type is a value that has symbol and namespaces

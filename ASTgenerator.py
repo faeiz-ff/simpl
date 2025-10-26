@@ -91,7 +91,7 @@ def main():
             "slash", "lparen", "rparen", "greater", "greater_equal",
             "less", "less_equal", "equal", "equal_equal", "dot", "lcurly",
             "rcurly", "comma", "lsquare", "rsquare", "pipe", "ampersand",
-            "bang", "arrow",
+            "bang", "arrow", "bang_equal"
         ]
     )
 
@@ -99,7 +99,7 @@ def main():
         "Binary     : Expr.ExprBase left, Token op, Expr.ExprBase right",
         "Unary      : Token op, Expr.ExprBase right",
         "Literal    : Token token",
-        "Grouping   : Expr.ExprBase expression",
+        "Grouping   : Expr.ExprBase expr",
         "Member     : Expr.ExprBase main, Expr.Member member",
         "Identifier : Token token",
         "Lambda     : Array<Stmt.Types-Token> params, Stmt.Type returnValue, Stmt.Block block",
@@ -123,6 +123,7 @@ def main():
         "Hasil : Expr.ExprBase expr", # lol ironic
         "Jenis : Token name, Array<Token> enums",
         "Model : Token name, Array<Stmt.Type-Token> contents",
+        "Simpl : Array<Stmt.StmtBase> statements",
     ])
 
 if __name__ == "__main__":
