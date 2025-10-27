@@ -129,7 +129,7 @@ export const GLOBAL_ENV = (() => {
     let env = new Environment();
     env.define("petik", new PetikTipe());
     env.define("angka", new AngkaTipe());
-    env.define("logis", new Variable(stipeSymbol, true, logisSymbol));
+    env.define("logis", new LogisTipe());
     
     return env;
 })();

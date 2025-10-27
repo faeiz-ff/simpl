@@ -6,6 +6,9 @@ import { SimplErrorEksekusi } from "./SimplError.js";
 import { Environment } from "./Environment.js";
 import * as Value from "./Value.js";
 
+class Henti {}
+class Lewat {}
+
 // Implements all Expressions and Statements Visitor
 export class Interpreter {
     constructor() {
@@ -112,7 +115,7 @@ export class Interpreter {
         this.line = datumStmt.name.line;
 
         if (this.environment.has(name)) {
-            throw new SimplErrorEksekusi("Variabel dengan nama yang sama sudah ada.");
+            throw new SimplErrorEksekusi(`Variabel dengan nama '${name}' sudah ada.`);
         }
 
         let variable = new Value.Variable(type, datumStmt.type.tetap);
@@ -123,6 +126,56 @@ export class Interpreter {
         variable.data = value.data;
 
         this.environment.define(name, variable);
+    }
+
+    visitBlockStmt(blockStmt) {
+        let blockEnv = new Environment(this.environment);
+        this.environment = blockEnv;
+        try {
+            for (let stmt of blockStmt.statements) {
+                stmt.accept(this);
+            }
+        } catch (err) {
+            if (err instanceof Lewat || err instanceof Henti) {
+                this.environment = blockEnv.enclosing; // close the environment first
+            }
+            throw err; // rethrows to the nearest Slagi/Untuk statement
+        }
+        this.environment = blockEnv.enclosing;
+    }
+
+    visitKalauStmt(kalauStmt) {
+        // condition may be null for 'namun', accept the thenBlock if it is
+        let condition = kalauStmt.condition?.accept(this);
+        if (!condition || condition.data) {
+            kalauStmt.thenBlock.accept(this);
+        } else {
+            kalauStmt.elseKalau.accept(this);
+        }
+    }
+
+    visitHentiStmt(hentiStmt) {
+        throw new Henti(); // throws exception to escape from deep recursion
+    }
+
+    
+    visitLewatStmt(lewatStmt) {
+        throw new Lewat(); // throws exception to escape from deep recursion
+    }
+
+    visitSlagiStmt(slagiStmt) {
+        let condition = slagiStmt.condition.accept(this);
+        while (condition.data) {
+            try {
+                slagiStmt.block.accept(this);
+            } catch (err) {
+                if (err instanceof Henti) {
+                    break;
+                } else if (err instanceof Lewat) {
+                    continue;
+                } else throw err;
+            }
+        }
     }
 
     visitSimplStmt(simpl) {

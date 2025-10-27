@@ -31,7 +31,7 @@ untuk petik dialog dalam dialog_dialog {
       cetak dialog
 }
 
-mesin penambah = (angka a, angka b) angka {
+mesin penambah ==> (angka a, angka b) angka {
   hasil a + b
 }
 

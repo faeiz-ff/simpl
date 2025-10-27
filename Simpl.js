@@ -79,6 +79,5 @@ function deepPrint(value, indent = 0, visited = new WeakSet()) {
 let simp = new Simpl();
 simp.runCode
 (`
-  logis test = "petikdominan" - "petiksubmisif"
-  cetak test
+
 `);
