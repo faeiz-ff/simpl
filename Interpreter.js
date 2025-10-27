@@ -2,20 +2,14 @@ import * as Expr from "./Expr.js";
 import { Token } from "./Token.js";
 import { ID } from "./TokenType.js";
 import * as Stmt from "./Stmt.js";
-import { SimplRuntimeError } from "./SimplError.js";
+import { SimplErrorEksekusi } from "./SimplError.js";
 import { Environment } from "./Environment.js";
-import * as Value from "./Variable.js";
+import * as Value from "./Value.js";
 
 // Implements all Expressions and Statements Visitor
 export class Interpreter {
     constructor() {
-        this.globalEnvironment = new Environment();
-        this.globalEnvironment.define("petik", new Value.PetikType());
-        this.globalEnvironment.define("angka", new Value.AngkaType());
-        this.globalEnvironment.define("logis", new Value.LogisType());
-        this.globalEnvironment.define("mesin", new Value.MesinType());
-        this.globalEnvironment.define("baris", new Value.BarisType());
-
+        this.globalEnvironment = Value.GLOBAL_ENV;
         this.init();
     }
 
@@ -32,11 +26,13 @@ export class Interpreter {
         this.line = lit.line;
         switch(typeof lit.value) {
             case "string": 
-                return new Value.Petik(lit.value);
+                return new Value.Value(Value.petikSymbol, lit.value);
             case "number": 
-                return new Value.Angka(lit.value);
+                return new Value.Value(Value.angkaSymbol, lit.value);
             case "boolean":
-                return new Value.Logis(lit.value);
+                return new Value.Value(Value.logisSymbol, lit.value);
+            case _:
+                return new Value.Value(null, null);
         }
     }
 
@@ -46,22 +42,32 @@ export class Interpreter {
 
         this.line = binaryExpr.op.line;
 
+        let isNull = this.nullCheck(leftValue, rightValue);
+        if (isNull) {
+            throw new SimplErrorEksekusi(`Tidak bisa mengoperasikan nilai Nihil.`);
+        }
         this.typeCheck(leftValue, rightValue, `Pada operasi biner ${binaryExpr.op.lexeme}`)
 
-        
+        let result = this.environment.get(leftValue.type.description) // get Model
+            .operate(this, binaryExpr.op.type, rightValue, leftValue); // dispatch the operation
+
+        return result;
     }
 
     visitUnaryExpr(unaryExpr) {
+        let rightValue = unaryExpr.right.accept(this);
+
         this.line = unaryExpr.op.line;
 
-        switch (unaryExpr.op.lexeme) {
-            case "+":
-                return unaryExpr.right.accept(this);
-            case "-":
-                return - unaryExpr.right.accept(this);
-            case "!":
-                return !this.isTruthy(unaryExpr.right.accept(this));
+        let isNull = this.nullCheck(rightValue);
+        if (isNull) {
+            throw new SimplErrorEksekusi(`Tidak bisa mengoperasikan nilai Nihil.`);
         }
+
+         let result = this.environment.get(leftValue.type.description) // get Model
+            .operate(this, unaryExpr.op.type, rightValue); // dispatch the operation
+
+        return result;
     }
 
     visitGroupingExpr(groupingExpr) {
@@ -69,18 +75,19 @@ export class Interpreter {
     }
 
     visitIdentifierExpr(identifierExpr) {
-        let data =  this.environment.get(identifierExpr.token.lexeme);
+        let value =  this.environment.get(identifierExpr.token.lexeme);
         this.line = identifierExpr.token.line;
-        if (!data) throw new SimplRuntimeError(`${identifierExpr.token.lexeme} tidak ditemukan.`);
-        return data;
+        if (!value) throw new SimplErrorEksekusi(`${identifierExpr.token.lexeme} tidak ditemukan.`);
+        return value;
     }
 
     // STATEMENT VISITORS
 
+    // this is needed for interpreting generics TODO!
     visitTypeStmt(typeStmt) {
-        let type =  typeStmt.type.accept(this).symbol;
-        if (!type) throw new SimplRuntimeError("Nama Tipe Invalid.");
-        return type;
+        let type =  typeStmt.type.accept(this);
+        if (type.type !== Value.stipeSymbol) throw new SimplErrorEksekusi(`Nilai bukan sebuah Model/Tipe Valid.`);
+        return type.data;
     }
 
     visitCetakStmt(cetakStmt) {
@@ -105,15 +112,12 @@ export class Interpreter {
         this.line = datumStmt.name.line;
 
         if (this.environment.has(name)) {
-            throw new SimplRuntimeError("Variabel dengan nama yang sama sudah ada.");
-        } else if (Value.RESERVED_NAMES.some(val=>val===name)) {
-            throw new SimplRuntimeError("Nama variabel tidak bisa menyamai tipe primitif");
+            throw new SimplErrorEksekusi("Variabel dengan nama yang sama sudah ada.");
         }
 
-        let variable = new Value.Variable(type, name);
+        let variable = new Value.Variable(type, datumStmt.type.tetap);
 
         let value = datumStmt.expr.accept(this);
-
         this.typeCheck(variable, value, `Pada pembuatan variabel '${name}'`);
 
         variable.data = value.data;
@@ -130,8 +134,24 @@ export class Interpreter {
     // UTILITIES
 
     typeCheck(a, b, message) {
-        if (a.type !== b.type) 
-            throw new SimplRuntimeError(`Tipe data tidak sama: ${a.type.description} != ${b.type.description}. ` + message);
+        if (a.type !== b.type) {
+            console.log("typecheck : ", a, " vs ", b)
+            throw new SimplErrorEksekusi(`Tipe data tidak sama: ${a.type.description} != ${b.type.description}. ` + message);
+        }
+    }
+
+    typeAssert(a, type) {
+
+    }
+
+    nullCheck(...args) {
+        for (let i of args) {
+            switch (i.data) {
+                case "": case 0: case false: continue;
+            }
+            if (!i.data) return i;
+        }
+        return false;
     }
 
     isTruthy(value) {

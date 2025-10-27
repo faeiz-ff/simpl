@@ -1,14 +1,10 @@
-class ranfom {
-    constructor(real) {
-        this.real = real
-    }
+let fair = "a";
+let nor = "b";
 
-    set real(thing) {
-        if (thing === false) console.log("what?")
-        return thing;
-    }
+switch(fair) {
+    case "a": nor += "Asfd"; break;
+    case "b": nor += "lol"
+    case "A": nor += "pluh"
 }
 
-let r = new ranfom(true);
-r.real = false;
-
+console.log(nor);

@@ -1,6 +1,6 @@
 import * as TokenType from "./TokenType.js";
 import { Token } from "./Token.js";
-import { SimplLexerError } from "./SimplError.js";
+import { SimplErrorTulisanSintaks } from "./SimplError.js";
 
 export class Lexer {
     constructor() {
@@ -91,6 +91,10 @@ export class Lexer {
         let isLogis = ["benar", "salah"].some((val)=>val===lexeme)
         if (isLogis) {
             return new Token(TokenType.LITERAL, lexeme, "benar" === lexeme ? true : false, this.lineIndex);
+        }
+
+        if (lexeme === "nihil") {
+            return new Token(TokenType.LITERAL, lexeme, null, this.lineIndex);
         }
 
         return new Token(
@@ -195,7 +199,7 @@ export class Lexer {
         }
         if (this.isAtEnd()) return;
 
-        this.errors.push(new SimplLexerError(`[Baris ${this.lineIndex}] karakter tidak valid. Menemukan ${this.see()}`));
+        this.errors.push(new SimplErrorTulisanSintaks(`[Baris ${this.lineIndex}] karakter tidak valid. Menemukan ${this.see()}`));
         this.advance();
     }
 

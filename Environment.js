@@ -1,4 +1,4 @@
-import { SimplRuntimeError } from "./SimplError.js";
+import { SimplErrorEksekusi } from "./SimplError.js";
 
 // Environment defines a scope for all data to live in
 export class Environment {
@@ -19,7 +19,7 @@ export class Environment {
             this.enclosing.assign(thing, value);
         }
 
-        throw new SimplRuntimeError("Variable not found");
+        return null;
     }
 
     get(thing) {
@@ -29,7 +29,7 @@ export class Environment {
             return this.enclosing.get(thing);
         }
 
-        throw new SimplRuntimeError("Variable not found");
+        return null;
     }
 
     has(thing) {

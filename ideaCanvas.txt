@@ -151,3 +151,10 @@ oh its of type petik! send the value (of type) back,
 i can do type DOT member,  for static functions / moduls
 or i can instantiate a variable with whatever type symbol it is
 -> so type is a value that has symbol and namespaces
+
+the reference problem with values
+  one possible solution is to just 
+  make all stuff immutable
+the environment problem with lambdas.
+  with recursive calling, what environment should
+  the enclosing be?

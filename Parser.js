@@ -1,7 +1,7 @@
 import * as TokenType from "./TokenType.js";
 import * as Expr from "./Expr.js";
 import * as Stmt from "./Stmt.js";
-import { SimplError, SimplParserError } from "./SimplError.js"; 
+import { SimplError, SimplErrorStrukturSintaks } from "./SimplError.js"; 
 
 export class Parser {
     constructor() {
@@ -281,10 +281,8 @@ export class Parser {
         let type = this.typeStmt();
         this.eat(TokenType.ID, "Mengharapkan Nama setelah Tipe pada deklarasi variabel.");
         let id = this.previous();
-        let expr = null;
-        if (this.match(TokenType.EQUAL)) {
-            expr = this.expression();
-        }
+        this.eat(TokenType.EQUAL, "Mengharapkan '=' setelah Nama variabel.");
+        let expr = this.expression();
         return new Stmt.Datum(type, id, expr);
     }
 
@@ -420,7 +418,7 @@ export class Parser {
     }
 
     error(errmsg, found = true) {
-        throw new SimplParserError(`Error Penulisan: [Baris ${this.see().line}] ` + errmsg + ((found) ? ` Menemukan '${this.see().lexeme }'.` : ""));
+        throw new SimplErrorStrukturSintaks(`Error Penulisan: [Baris ${this.see().line}] ` + errmsg + ((found) ? ` Menemukan '${this.see().lexeme }'.` : ""));
     }
 
     parse(tokens) {

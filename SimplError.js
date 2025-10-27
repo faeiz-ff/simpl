@@ -1,11 +1,12 @@
 // Errors
 export class SimplError extends Error {
     constructor(msg) {
-        super(null);
-        this.msg = msg;
+        super(msg);
     }
 };
-export class SimplRuntimeError extends SimplError {};
-export class SimplParserError extends SimplError {};
-export class SimplLexerError extends SimplError {};
-export class SimplSemanticError extends SimplError{};
+export class SimplErrorEksekusi extends SimplError {};
+export class SimplErrorStrukturSintaks extends SimplError {};
+export class SimplErrorTulisanSintaks extends SimplError {};
+export class SimplErrorSemantik extends SimplError{};
+export class SimplErrorResolusi extends SimplError{};
+export class SimplErrorOperasi extends SimplError{};
