@@ -65,6 +65,7 @@ class PetikTipe extends Model {
         this.operators.define("LESS", {callFunc: (v, r, l) => new Value(logisSymbol, l.data<r.data)});
         this.operators.define("EQUAL_EQUAL", {callFunc: (v, r, l) => new Value(logisSymbol, l.data===r.data)});
         this.operators.define("GREATER_EQUAL", {callFunc: (v, r, l) => new Value(logisSymbol, l.data>=r.data)});
+        this.operators.define("BANG_EQUAL", {callFunc: (v, r, l) => new Value(logisSymbol, l.data!==r.data)});
         this.operators.define("LESS_EQUAL", {callFunc: (v, r, l) => new Value(logisSymbol, l.data<=r.data)});
 
         this.operators.define("AMPERSAND", {callFunc: (v, r, l) => new Value(logisSymbol, l.data && r.data)});
@@ -80,13 +81,14 @@ class AngkaTipe extends Model {
     }
 
     init() {
-        this.operators.define("PLUS", {callFunc: (v, r, l=0) => new Value(angkaSymbol, l.data+r.data)});
-        this.operators.define("MINUS", {callFunc: (v, r, l=0) => new Value(angkaSymbol, l.data-r.data)});
+        this.operators.define("PLUS", {callFunc: (v, r, l={data:0}) => new Value(angkaSymbol, l.data+r.data)});
+        this.operators.define("MINUS", {callFunc: (v, r, l={data:0}) => new Value(angkaSymbol, l.data-r.data)});
         this.operators.define("STAR", {callFunc: (v, r, l) => new Value(angkaSymbol, l.data*r.data)});
         this.operators.define("SLASH", {callFunc: (v, r, l) => new Value(angkaSymbol, l.data/r.data)});
 
         this.operators.define("GREATER", {callFunc: (v, r, l) => new Value(logisSymbol, l.data>r.data)});
         this.operators.define("LESS", {callFunc: (v, r, l) => new Value(logisSymbol, l.data<r.data)});
+        this.operators.define("BANG_EQUAL", {callFunc: (v, r, l) => new Value(logisSymbol, l.data!==r.data)});
         this.operators.define("EQUAL_EQUAL", {callFunc: (v, r, l) => new Value(logisSymbol, l.data===r.data)});
         this.operators.define("GREATER_EQUAL", {callFunc: (v, r, l) => new Value(logisSymbol, l.data>=r.data)});
         this.operators.define("LESS_EQUAL", {callFunc: (v, r, l) => new Value(logisSymbol, l.data<=r.data)});
@@ -104,10 +106,42 @@ class LogisTipe extends Model {
     }
 
     init() {
+        this.operators.define("BANG_EQUAL", {callFunc: (v, r, l) => new Value(logisSymbol, l.data!==r.data)});
         this.operators.define("EQUAL_EQUAL", {callFunc: (v, r, l) => new Value(logisSymbol, l.data===r.data)});
 
-        this.operators.define("AMPERSAND", {callFunc: (v, r, l) => new Value(logisSymbol, Boolean(l && r.data))});
-        this.operators.define("PIPE", {callFunc: (v, r, l) => new Value(logisSymbol, Boolean(l || r.data))});
+        this.operators.define("AMPERSAND", {callFunc: (v, r, l) => new Value(logisSymbol, Boolean(l.data && r.data))});
+        this.operators.define("PIPE", {callFunc: (v, r, l) => new Value(logisSymbol, Boolean(l.data || r.data))});
+        this.operators.define("BANG", {callFunc: (v, r, l) => new Value(logisSymbol, !Boolean(r.data))});
+    }
+}
+
+class BarisTipe extends Model {
+    constructor() {
+        super(barisSymbol);
+        this.init();
+    }
+
+    init () {
+        this.operators.define("PLUS", {callFunc: (v, r, l) => new Value(barisSymbol, Array(...l.data, ...r.data))});
+
+        this.operators.define("EQUAL_EQUAL", {callFunc: (v, r, l) => new Value(logisSymbol, ((a,b)=>{
+            if (a.length !== b.length) return false;
+            for (let i = 0; i < a.length; i++) {
+                if (a[i].data !== b[i].data) return false;
+            }
+            return true;
+        })(l.data,r.data))});
+
+        this.operators.define("BANG_EQUAL", {callFunc: (v, r, l) => new Value(logisSymbol, ((a,b)=>{
+            if (a.length !== b.length) return true;
+            for (let i = 0; i < a.length; i++) {
+                if (a[i].data !== b[i].data) return true;
+            }
+            return false;
+        })(l.data,r.data))});
+
+        this.operators.define("AMPERSAND", {callFunc: (v, r, l) => new Value(logisSymbol, Boolean(l.data && r.data))});
+        this.operators.define("PIPE", {callFunc: (v, r, l) => new Value(logisSymbol, Boolean(l.data || r.data))});
         this.operators.define("BANG", {callFunc: (v, r, l) => new Value(logisSymbol, !Boolean(r.data))});
     }
 }
@@ -131,5 +165,6 @@ export const GLOBAL_ENV = (() => {
     env.define("petik", new PetikTipe());
     env.define("angka", new AngkaTipe());
     env.define("logis", new LogisTipe());
+    env.define("baris", new BarisTipe());
     return env;
 })();

@@ -100,7 +100,7 @@ def main():
         "Unary      : Token op, Expr.ExprBase right",
         "Literal    : Token token",
         "Grouping   : Expr.ExprBase expr",
-        "Member     : Expr.ExprBase main, Expr.Member member",
+        "Member     : Expr.ExprBase main, Expr.Identifier member",
         "Identifier : Token token",
         "Lambda     : Array<Stmt.Types-Token> params, Stmt.Type returnValue, Stmt.Block block",
         "Call       : Expr.ExprBase callable, Expr.ExprBase args",

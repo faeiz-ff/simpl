@@ -23,7 +23,7 @@ class Simpl {
     }
 }
 
-// debug thing, i copypasted this from AI
+// print
 function deepPrint(value, indent = 0, visited = new WeakSet()) {
   const pad = '  '.repeat(indent);
 
@@ -79,12 +79,5 @@ function deepPrint(value, indent = 0, visited = new WeakSet()) {
 let simp = new Simpl();
 simp.runCode
 (`
-  datum kond = 1
-  slagi kond {
-    rubah kond = kond + 1
-    kalau kond == 10 {
-      rubah kond = 0
-    }
-    cetak kond # ini untuk lmgaooo
-  }
+
 `); 

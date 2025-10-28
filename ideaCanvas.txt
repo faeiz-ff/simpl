@@ -157,3 +157,7 @@ the reference problem with values
 the environment problem with lambdas.
   with recursive calling, what environment should
   the enclosing be?
+
+!! when inside a function, we cant use henti/lewat if theres no slagi/Untuk
+inside it
+

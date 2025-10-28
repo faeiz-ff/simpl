@@ -39,6 +39,39 @@ export class Interpreter {
         }
     }
 
+    visitArrayExpr(arrayExpr) {
+        let value = new Value.Value(Value.barisSymbol, []);
+
+        for (let expr of arrayExpr.contents) {
+            let v = expr.accept(this);
+            // value.data.push(v);
+            value.data.push(new Value.Value(v.type, v.data));
+        }
+
+        return value;
+    }
+
+    visitIndexExpr(indexExpr) {
+        // a real TODO would've been to implement real iterables
+        let iterable = indexExpr.iterable.accept(this);
+        if (iterable.type !== Value.barisSymbol) {
+            throw new SimplErrorEksekusi("Bukan baris, tidak bisa di-indeks");
+        }
+
+        let index = indexExpr.index.accept(this);
+        if (index.type !== Value.angkaSymbol) {
+            throw new SimplErrorEksekusi("ekspresi di dalam indeks harus bertipe angka.");
+        }
+
+        if (index.data >= iterable.data.length) {
+            throw new SimplErrorEksekusi("Indeks lebih besar atau sama dengan ukuran baris");
+        }
+        let i = index.data;
+
+        while (index.data < 0) index.data += iterable.data.length;
+        return iterable.data[index.data];
+    }
+
     visitBinaryExpr(binaryExpr) {
         let leftValue = binaryExpr.left.accept(this);
         let rightValue = binaryExpr.right.accept(this);
@@ -96,11 +129,17 @@ export class Interpreter {
     visitCetakStmt(cetakStmt) {
         let result = cetakStmt.expr.accept(this);
 
-        if (result.type === Value.logisSymbol) {
-            console.log(result.data ? "benar" : "salah");
-        } else {
-            console.log(result.data !== null ? result.data : "nihil");
+        const kePetik = (thing) => {
+            if (thing.type === Value.logisSymbol) {
+                return thing.data ? "benar" : "salah";
+            } else if (thing.type === Value.barisSymbol) {
+                return '[' + thing.data.reduce((str, val)=>str+" "+kePetik(val), "") + ' ]'
+            } else {
+                return thing.data !== null ? thing.data.toString() : "nihil";
+            }
         }
+
+        console.log(kePetik(result));
 
     }
 
@@ -138,7 +177,6 @@ export class Interpreter {
             throw new SimplErrorEksekusi(`Variabel tetap tidak dapat di-rubah.`);
         }
         let value = rubahStmt.value.accept(this);
-
         if (value.data === null) value.type = variable.type; // if nihil, ok
 
         this.typeCheck(variable, value, `Pada perubahan variabel.`);
@@ -154,8 +192,9 @@ export class Interpreter {
                 stmt.accept(this);
             }
         } catch (err) {
+            this.environment = blockEnv.enclosing; // close the environment first
             if (err instanceof Lewat || err instanceof Henti) {
-                this.environment = blockEnv.enclosing; // close the environment first
+                return;
             }
             throw err; // rethrows to the nearest Slagi/Untuk statement
         }
@@ -192,6 +231,40 @@ export class Interpreter {
                     continue;
                 } else throw err;
             }
+        }
+    }
+
+    visitUntukStmt(untukStmt) {
+        let name = untukStmt.varName.lexeme;
+        let type = untukStmt.varType.accept(this);
+        
+        let iter = untukStmt.iterable.accept(this);
+        if (iter.type !== Value.barisSymbol) {
+            throw new SimplErrorEksekusi("Pernyataan 'untuk' harus mengiterasi sebuah baris");
+        }
+
+        for (let i of iter.data) {
+            if (i.type !== type) throw new SimplErrorEksekusi("Tipe data tidak sama.")
+
+            let untukEnv = new Environment(this.environment);
+            untukEnv.define(name, new Value.Variable(type, untukStmt.varType.tetap, i.data));
+            this.environment = untukEnv;
+            try {
+                // didn't 'accept' the block, just uses it directly
+                for (let stmt of untukStmt.block.statements) {
+                    stmt.accept(this); 
+                }
+            } catch (err) {
+                this.environment = untukEnv.enclosing;
+                if (err instanceof Lewat) {
+                    continue;
+                } else if (err instanceof Henti) {
+                    return;
+                } else {
+                    throw err;
+                }
+            }
+            this.environment = untukEnv.enclosing;
         }
     }
 
