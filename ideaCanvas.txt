@@ -86,7 +86,6 @@ reFinal design on Type checks {
 
     datum c = "hola" # underlying type of petik
     cetak a + c # Type error
-    baris<angka> prima = [c] # type error
     baris apapun = [c, 234] # succeeds
 
     so we actually apply a type from the value to the identifier

@@ -436,7 +436,7 @@ export class Parser {
                 treeList.push(this.statement());
             }
         } catch (err) {
-            console.log(err.msg);
+            console.log(err);
             return null;
         }
         this.tree = new Stmt.Simpl(treeList);

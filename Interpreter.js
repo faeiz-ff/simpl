@@ -34,7 +34,7 @@ export class Interpreter {
                 return new Value.Value(Value.angkaSymbol, lit.value);
             case "boolean":
                 return new Value.Value(Value.logisSymbol, lit.value);
-            case _:
+            default:
                 return new Value.Value(null, null);
         }
     }
@@ -67,7 +67,7 @@ export class Interpreter {
             throw new SimplErrorEksekusi(`Tidak bisa mengoperasikan nilai Nihil.`);
         }
 
-         let result = this.environment.get(leftValue.type.description) // get Model
+         let result = this.environment.get(rightValue.type.description) // get Model
             .operate(this, unaryExpr.op.type, rightValue); // dispatch the operation
 
         return result;
@@ -99,7 +99,7 @@ export class Interpreter {
         if (result.type === Value.logisSymbol) {
             console.log(result.data ? "benar" : "salah");
         } else {
-            console.log(result.data);
+            console.log(result.data !== null ? result.data : "nihil");
         }
 
     }
@@ -121,11 +121,29 @@ export class Interpreter {
         let variable = new Value.Variable(type, datumStmt.type.tetap);
 
         let value = datumStmt.expr.accept(this);
+
+        if (value.data === null) value.type = variable.type; // if nihil, ok
+
         this.typeCheck(variable, value, `Pada pembuatan variabel '${name}'`);
 
-        variable.data = value.data;
+        variable.data = value.data; 
+        // because data is always primitives (for now), this copies data;
 
         this.environment.define(name, variable);
+    }
+
+    visitRubahStmt(rubahStmt) {
+        let variable = rubahStmt.variable.accept(this); // is a reference to the variable data
+        if (variable.tetap) {
+            throw new SimplErrorEksekusi(`Variabel tetap tidak dapat di-rubah.`);
+        }
+        let value = rubahStmt.value.accept(this);
+
+        if (value.data === null) value.type = variable.type; // if nihil, ok
+
+        this.typeCheck(variable, value, `Pada perubahan variabel.`);
+
+        variable.data = value.data; // reference modifying (THANK GOD FOR THIS I LOVE YOU GARBAGE COLLECTOR)
     }
 
     visitBlockStmt(blockStmt) {
@@ -147,10 +165,10 @@ export class Interpreter {
     visitKalauStmt(kalauStmt) {
         // condition may be null for 'namun', accept the thenBlock if it is
         let condition = kalauStmt.condition?.accept(this);
-        if (!condition || condition.data) {
+        if (condition === null || condition.data) {
             kalauStmt.thenBlock.accept(this);
         } else {
-            kalauStmt.elseKalau.accept(this);
+            kalauStmt.elseKalau?.accept(this); // kalau may not have namun
         }
     }
 
@@ -164,8 +182,7 @@ export class Interpreter {
     }
 
     visitSlagiStmt(slagiStmt) {
-        let condition = slagiStmt.condition.accept(this);
-        while (condition.data) {
+        while (slagiStmt.condition.accept(this).data) {
             try {
                 slagiStmt.block.accept(this);
             } catch (err) {
@@ -199,10 +216,7 @@ export class Interpreter {
 
     nullCheck(...args) {
         for (let i of args) {
-            switch (i.data) {
-                case "": case 0: case false: continue;
-            }
-            if (!i.data) return i;
+            if (i.data === null) return i;
         }
         return false;
     }

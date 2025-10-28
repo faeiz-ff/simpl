@@ -63,15 +63,6 @@ export class Lexer {
             if (token) tokens.push(token);
         }
 
-        if (this.errors.length >= 1) {
-            if (!this.errors[0]) {
-
-            } else {
-                console.log(this.errors.reduce((prevString, nowError) => prevString += nowError.message + '\n', ""));
-                return;
-            }
-        }
-
         tokens.push(new Token(TokenType.EOF, null, null, this.lineIndex));
 
         this.tokens = tokens;
@@ -143,7 +134,11 @@ export class Lexer {
 
     scan() {
         this.skipWhitespaces();
-        if(this.see() === '#') this.comment();
+        if(this.see() === '#') {
+            this.comment();
+            this.skipWhitespaces();
+        }
+
 
         if(this.isAlpha(this.see())) return this.id();
         if(this.isNumeric(this.see())) return this.number();
@@ -199,8 +194,7 @@ export class Lexer {
         }
         if (this.isAtEnd()) return;
 
-        this.errors.push(new SimplErrorTulisanSintaks(`[Baris ${this.lineIndex}] karakter tidak valid. Menemukan ${this.see()}`));
-        this.advance();
+        throw new SimplErrorTulisanSintaks(`[Baris ${this.lineIndex}] karakter tidak valid. Menemukan ${this.see()}`);
     }
 
     debugPrintTokens(tokens) {

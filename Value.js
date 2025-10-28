@@ -32,6 +32,7 @@ export class Model extends Variable {
     constructor(type) {
         super(stipeSymbol, true, type);
         this.operators = new Environment();
+        this.environment = new Environment();
     }
 
     operate(visitor, op, right, left) {
@@ -73,7 +74,7 @@ class PetikTipe extends Model {
 }
 
 class AngkaTipe extends Model {
-        constructor() {
+    constructor() {
         super(angkaSymbol);
         this.init();
     }
@@ -97,7 +98,7 @@ class AngkaTipe extends Model {
 }
 
 class LogisTipe extends Model {
-        constructor() {
+    constructor() {
         super(logisSymbol);
         this.init();
     }
@@ -130,6 +131,5 @@ export const GLOBAL_ENV = (() => {
     env.define("petik", new PetikTipe());
     env.define("angka", new AngkaTipe());
     env.define("logis", new LogisTipe());
-    
     return env;
 })();
