@@ -9,4 +9,3 @@ export class SimplErrorStrukturSintaks extends SimplError {};
 export class SimplErrorTulisanSintaks extends SimplError {};
 export class SimplErrorSemantik extends SimplError{};
 export class SimplErrorResolusi extends SimplError{};
-export class SimplErrorOperasi extends SimplError{};

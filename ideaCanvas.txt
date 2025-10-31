@@ -161,3 +161,9 @@ the environment problem with lambdas.
 !! when inside a function, we cant use henti/lewat if theres no slagi/Untuk
 inside it
 
+!! model & jenis are of type, we cant just reassign the 
+definition to something else. So does built-in types. 
+so we have to put them in the global namespace (or inside a modul which 
+must be put in the global namespace too)
+
+

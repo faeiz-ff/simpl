@@ -6,14 +6,28 @@ import { SimplErrorEksekusi } from "./SimplError.js";
 import { Environment } from "./Environment.js";
 import * as Value from "./Value.js";
 
-class Henti {}
-class Lewat {}
+export class Henti {}
+export class Lewat {}
+export class Hasil {
+    constructor(value) {
+        this.value = value;
+    }
+}
+
+const location = {
+    GLOBAL: 1,
+    SLAGI: 2,
+    UNTUK: 3,
+    MESIN: 4,
+}
 
 // Implements all Expressions and Statements Visitor
 export class Interpreter {
     constructor() {
         this.globalEnvironment = Value.GLOBAL_ENV;
         this.init();
+        this.state = location.GLOBAL;
+        this.stackNum = 0;
     }
 
     init() {
@@ -55,21 +69,46 @@ export class Interpreter {
         // a real TODO would've been to implement real iterables
         let iterable = indexExpr.iterable.accept(this);
         if (iterable.type !== Value.barisSymbol) {
-            throw new SimplErrorEksekusi("Bukan baris, tidak bisa di-indeks");
+            this.error("Bukan baris, tidak bisa di-indeks");
         }
 
         let index = indexExpr.index.accept(this);
         if (index.type !== Value.angkaSymbol) {
-            throw new SimplErrorEksekusi("ekspresi di dalam indeks harus bertipe angka.");
+            this.error("ekspresi di dalam indeks harus bertipe angka.");
         }
 
         if (index.data >= iterable.data.length) {
-            throw new SimplErrorEksekusi("Indeks lebih besar atau sama dengan ukuran baris");
+            this.error("Indeks lebih besar atau sama dengan ukuran baris");
         }
         let i = index.data;
 
         while (index.data < 0) index.data += iterable.data.length;
         return iterable.data[index.data];
+    }
+
+    visitLambdaExpr(lambdaExpr) {
+        let type = lambdaExpr.returnValue.accept(this);
+        let lambda = new Value.Callable(this.environment, lambdaExpr.block, lambdaExpr.params !== null ? lambdaExpr.params : [], type);
+        return new Value.Value(Value.mesinSymbol, lambda);
+    }
+
+    visitCallExpr(callExpr) {
+        this.stackNum += 1;
+        this.state = location.MESIN;
+        let callable = callExpr.callable.accept(this);
+
+        if (callable.type !== Value.mesinSymbol && callable.type !== Value.stipeSymbol) {
+            this.error(`Hanya bisa 'memanggil' mesin atau model, malah menemukan '${callable.type.description}' `)
+        }
+
+        if (!callable.data?.callFunc) {
+            this.error(`Mesin tidak terdefinisi, tidak bisa dipanggil.`);
+        }
+
+        let result = callable.data.callFunc(this, callExpr.args.map(val=>val.accept(this)));
+        this.stackNum -= 1;
+        if (this.stackNum == 0) this.state = location.GLOBAL;
+        return result;
     }
 
     visitBinaryExpr(binaryExpr) {
@@ -80,7 +119,7 @@ export class Interpreter {
 
         let isNull = this.nullCheck(leftValue, rightValue);
         if (isNull) {
-            throw new SimplErrorEksekusi(`Tidak bisa mengoperasikan nilai Nihil.`);
+            this.error(`Tidak bisa mengoperasikan nilai Nihil.`);
         }
         this.typeCheck(leftValue, rightValue, `Pada operasi biner ${binaryExpr.op.lexeme}`)
 
@@ -97,7 +136,7 @@ export class Interpreter {
 
         let isNull = this.nullCheck(rightValue);
         if (isNull) {
-            throw new SimplErrorEksekusi(`Tidak bisa mengoperasikan nilai Nihil.`);
+            this.error(`Tidak bisa mengoperasikan nilai Nihil.`);
         }
 
          let result = this.environment.get(rightValue.type.description) // get Model
@@ -113,7 +152,7 @@ export class Interpreter {
     visitIdentifierExpr(identifierExpr) {
         let value =  this.environment.get(identifierExpr.token.lexeme);
         this.line = identifierExpr.token.line;
-        if (!value) throw new SimplErrorEksekusi(`${identifierExpr.token.lexeme} tidak ditemukan.`);
+        if (!value) this.error(`${identifierExpr.token.lexeme} tidak ditemukan.`);
         return value;
     }
 
@@ -122,8 +161,8 @@ export class Interpreter {
     // this is needed for interpreting generics TODO!
     visitTypeStmt(typeStmt) {
         let type =  typeStmt.type.accept(this);
-        if (type.type !== Value.stipeSymbol) throw new SimplErrorEksekusi(`Nilai bukan sebuah Model/Tipe Valid.`);
-        return type.data;
+        if (type.type !== Value.stipeSymbol) this.error(`Nilai bukan sebuah Model/Tipe Valid.`);
+        return type.symbol;
     }
 
     visitCetakStmt(cetakStmt) {
@@ -134,12 +173,16 @@ export class Interpreter {
                 return thing.data ? "benar" : "salah";
             } else if (thing.type === Value.barisSymbol) {
                 return '[' + thing.data.reduce((str, val)=>str+" "+kePetik(val), "") + ' ]'
+            } else if (thing.type === Value.stipeSymbol) {
+                return `Model:${thing.symbol.description}`;
+            } else if (thing.type === Value.mesinSymbol) {
+                return `Mesin<>`;
             } else {
                 return thing.data !== null ? thing.data.toString() : "nihil";
             }
         }
 
-        console.log(kePetik(result));
+        console.log(">> " + kePetik(result));
 
     }
 
@@ -154,7 +197,9 @@ export class Interpreter {
         this.line = datumStmt.name.line;
 
         if (this.environment.has(name)) {
-            throw new SimplErrorEksekusi(`Variabel dengan nama '${name}' sudah ada.`);
+            this.error(`Variabel dengan nama '${name}' sudah ada.`);
+        } else if (Value.RESERVED_NAMES.some(v=>v===name)) {
+            this.error(`Nama sistem (${name}) tidak boleh didefinisi ulang`);
         }
 
         let variable = new Value.Variable(type, datumStmt.type.tetap);
@@ -174,7 +219,7 @@ export class Interpreter {
     visitRubahStmt(rubahStmt) {
         let variable = rubahStmt.variable.accept(this); // is a reference to the variable data
         if (variable.tetap) {
-            throw new SimplErrorEksekusi(`Variabel tetap tidak dapat di-rubah.`);
+            this.error(`Variabel tetap tidak dapat di-rubah.`);
         }
         let value = rubahStmt.value.accept(this);
         if (value.data === null) value.type = variable.type; // if nihil, ok
@@ -204,26 +249,41 @@ export class Interpreter {
     visitKalauStmt(kalauStmt) {
         // condition may be null for 'namun', accept the thenBlock if it is
         let condition = kalauStmt.condition?.accept(this);
-        if (condition === null || condition.data) {
+        if (condition === null || condition === undefined || condition.data) {
             kalauStmt.thenBlock.accept(this);
         } else {
             kalauStmt.elseKalau?.accept(this); // kalau may not have namun
         }
     }
 
-    visitHentiStmt(hentiStmt) {
-        throw new Henti(); // throws exception to escape from deep recursion
+    visitHentiStmt() {
+        if (this.state !== location.GLOBAL)
+            throw new Henti(); // throws exception to escape from deep recursion
+        else this.error("Tidak ada pengulangan untuk dihentikan.");
     }
 
     
-    visitLewatStmt(lewatStmt) {
-        throw new Lewat(); // throws exception to escape from deep recursion
+    visitLewatStmt() {
+        if (this.state !== location.GLOBAL)
+            throw new Lewat(); // throws exception to escape from deep recursion
+        else this.error("Tidak ada pengulangan untuk dilewatkan.");
+    }
+
+    visitHasilStmt(hasilStmt) {
+        if (this.stackNum == 0) {
+            this.error("Tidak bisa menghasilkan diluar blok mesin");
+        }
+        throw new Hasil(hasilStmt.expr.accept(this));
     }
 
     visitSlagiStmt(slagiStmt) {
         while (slagiStmt.condition.accept(this).data) {
             try {
-                slagiStmt.block.accept(this);
+                for (let stmt of slagiStmt.block.statements) {
+                    this.state = location.SLAGI;
+                    stmt.accept(this); 
+                    this.state = location.SLAGI;
+                }
             } catch (err) {
                 if (err instanceof Henti) {
                     break;
@@ -232,6 +292,8 @@ export class Interpreter {
                 } else throw err;
             }
         }
+        if (this.stackNum !== 0) this.state = location.MESIN;
+        else this.state = location.GLOBAL;
     }
 
     visitUntukStmt(untukStmt) {
@@ -240,11 +302,11 @@ export class Interpreter {
         
         let iter = untukStmt.iterable.accept(this);
         if (iter.type !== Value.barisSymbol) {
-            throw new SimplErrorEksekusi("Pernyataan 'untuk' harus mengiterasi sebuah baris");
+            this.error("Pernyataan 'untuk' harus mengiterasi sebuah baris.");
         }
 
         for (let i of iter.data) {
-            if (i.type !== type) throw new SimplErrorEksekusi("Tipe data tidak sama.")
+            if (i.type !== type) this.error("Tipe data tidak sama. " + `${i.type.description} vs ${type.description}`);
 
             let untukEnv = new Environment(this.environment);
             untukEnv.define(name, new Value.Variable(type, untukStmt.varType.tetap, i.data));
@@ -252,13 +314,17 @@ export class Interpreter {
             try {
                 // didn't 'accept' the block, just uses it directly
                 for (let stmt of untukStmt.block.statements) {
+                    this.state = location.UNTUK;
                     stmt.accept(this); 
+                    this.state = location.UNTUK;
                 }
             } catch (err) {
                 this.environment = untukEnv.enclosing;
                 if (err instanceof Lewat) {
                     continue;
                 } else if (err instanceof Henti) {
+                    if (this.stackNum !== 0) this.state = location.MESIN;
+                    else this.state = location.GLOBAL;
                     return;
                 } else {
                     throw err;
@@ -266,6 +332,8 @@ export class Interpreter {
             }
             this.environment = untukEnv.enclosing;
         }
+        if (this.stackNum !== 0) this.state = location.MESIN;
+        else this.state = location.GLOBAL;
     }
 
     visitSimplStmt(simpl) {
@@ -279,12 +347,8 @@ export class Interpreter {
     typeCheck(a, b, message) {
         if (a.type !== b.type) {
             console.log("typecheck : ", a, " vs ", b)
-            throw new SimplErrorEksekusi(`Tipe data tidak sama: ${a.type.description} != ${b.type.description}. ` + message);
+            this.error(`Tipe data tidak sama: ${a.type.description} != ${b.type.description}. ` + message);
         }
-    }
-
-    typeAssert(a, type) {
-
     }
 
     nullCheck(...args) {
@@ -294,13 +358,8 @@ export class Interpreter {
         return false;
     }
 
-    isTruthy(value) {
-        if (!value) return false; // catches null and false
-        if (value instanceof String && value === "") return false;
-        if (value instanceof Number && value === 0) return false;
-        if (value instanceof Array && value.length === 0) return false;
-
-        return true;
+    error(message) {
+        throw new SimplErrorEksekusi(`[Baris ${this.line}] ` + message);
     }
 
     interpret(tree) {

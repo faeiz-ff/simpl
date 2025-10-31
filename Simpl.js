@@ -4,26 +4,22 @@ import { Parser } from "./Parser.js";
 
 // Simpl: Indonesian Mock Programming Language
 
-class Simpl {
+export class Simpl {
 
-    runCode(code) {
-        console.log(code);
-        let lexer = new Lexer();
-        let tokens = lexer.scanTokens(code);
-        let parser = new Parser();
-        let tree = parser.parse(tokens);
-        let inter = new Interpreter();
-        if (tree) {
-          inter.interpret(tree);
-        }
+  runCode(code) {
+    console.log(code);
+    let lexer = new Lexer();
+    let tokens = lexer.scanTokens(code);
+    let parser = new Parser();
+    let tree = parser.parse(tokens);
+    let inter = new Interpreter();
+    if (tree) {
+      // deepPrint(tree);
+      inter.interpret(tree);
     }
-
-    static error(what, line) {
-        console.log(`error: [line ${line}] ${what}`);
-    }
+  }
 }
 
-// print
 function deepPrint(value, indent = 0, visited = new WeakSet()) {
   const pad = '  '.repeat(indent);
 
@@ -79,5 +75,7 @@ function deepPrint(value, indent = 0, visited = new WeakSet()) {
 let simp = new Simpl();
 simp.runCode
 (`
+  cetak mesin()
+`);
 
-`); 
+console.log()

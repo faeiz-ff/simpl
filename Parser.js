@@ -81,13 +81,14 @@ export class Parser {
             params.push([type, name]);
                 
             while(this.match(TokenType.COMMA)) {
+                this.eat(TokenType.ID, "Mengharapkan Tipe parameter setelah ',' dalam Lamda.");
                 let type = this.typeStmt();
                 this.eat(TokenType.ID, "Mengharapkan Nama parameter setelah deklarasi Tipe parameter dalam Lamda.");
                 let name = this.previous();
                 params.push([type, name]);
             }
         }
-
+        // deepPrint(params);
         this.eat(TokenType.RPAREN, "Mengharapkan ')' setelah deklarasi parameter Lamda.");
         let returnType = null;
         if (this.match(TokenType.ID)) {
@@ -443,3 +444,55 @@ export class Parser {
         return this.tree;
     }
 }
+
+// print
+function deepPrint(value, indent = 0, visited = new WeakSet()) {
+  const pad = '  '.repeat(indent);
+
+  if (value === null) {
+    console.log(`${pad}null`);
+    return;
+  }
+
+  const type = typeof value;
+
+  if (type !== 'object') {
+    console.log(`${pad}${String(value)}`);
+    return;
+  }
+
+  if (visited.has(value)) {
+    console.log(`${pad}[Circular]`);
+    return;
+  }
+  visited.add(value);
+
+  if (Array.isArray(value)) {
+    console.log(`${pad}[`);
+    for (const item of value) {
+      deepPrint(item, indent + 1, visited);
+    }
+    console.log(`${pad}]`);
+    return;
+  }
+
+  // determine constructor name
+  const ctorName = value.constructor && value.constructor !== Object
+    ? value.constructor.name
+    : 'Object';
+
+  console.log(`${pad}${ctorName} {`);
+  const keys = Reflect.ownKeys(value);
+  for (const key of keys) {
+    const val = value[key];
+    process.stdout.write(`${pad}  ${String(key)}: `);
+    if (typeof val === 'object' && val !== null) {
+      console.log();
+      deepPrint(val, indent + 2, visited);
+    } else {
+      console.log(val);
+    }
+  }
+  console.log(`${pad}}`);
+}
+
