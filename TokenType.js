@@ -57,7 +57,8 @@ export const
     AMPERSAND = 37,
     BANG = 38,
     ARROW = 39,
-    BANG_EQUAL = 40;
+    BANG_EQUAL = 40,
+    MODULUS = 41;
 
 export const TOKEN_STRING = [
     "RUBAH", 
@@ -101,4 +102,5 @@ export const TOKEN_STRING = [
     "BANG",
     "ARROW",
     "BANG_EQUAL",
+    "MODULUS",
 ];

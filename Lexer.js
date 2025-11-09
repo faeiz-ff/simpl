@@ -1,6 +1,6 @@
 import * as TokenType from "./TokenType.js";
 import { Token } from "./Token.js";
-import { SimplErrorTulisanSintaks } from "./SimplError.js";
+import { SimplErrorTulisan } from "./SimplError.js";
 
 export class Lexer {
     constructor() {
@@ -158,6 +158,7 @@ export class Lexer {
             case "]": return this.makeToken(TokenType.RSQUARE);
             case "|": return this.makeToken(TokenType.PIPE);
             case "&": return this.makeToken(TokenType.AMPERSAND);
+            case "%": return this.makeToken(TokenType.MODULUS);
             case "!": 
                 if (this.peek() === "=") {
                     this.advance();
@@ -194,7 +195,7 @@ export class Lexer {
         }
         if (this.isAtEnd()) return;
 
-        throw new SimplErrorTulisanSintaks(`[Baris ${this.lineIndex}] karakter tidak valid. Menemukan ${this.see()}`);
+        throw new SimplErrorTulisan(`[Baris ${this.lineIndex}] karakter tidak valid. Menemukan ${this.see()}`);
     }
 
     debugPrintTokens(tokens) {

@@ -91,7 +91,7 @@ def main():
             "slash", "lparen", "rparen", "greater", "greater_equal",
             "less", "less_equal", "equal", "equal_equal", "dot", "lcurly",
             "rcurly", "comma", "lsquare", "rsquare", "pipe", "ampersand",
-            "bang", "arrow", "bang_equal"
+            "bang", "arrow", "bang_equal", "modulus"
         ]
     )
 

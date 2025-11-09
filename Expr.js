@@ -57,7 +57,7 @@ export class Grouping extends ExprBase {
 }
 
 export class Member extends ExprBase {
- // Expr.ExprBase main, Expr.Member member
+ // Expr.ExprBase main, Expr.Identifier member
     constructor (main, member) {
         super();
         this.main = main;

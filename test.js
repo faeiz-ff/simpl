@@ -1,1 +1,1 @@
-console.log(Number("a.d"))
+console.log("foreSDFGach".toLowerCase())

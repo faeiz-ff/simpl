@@ -1,5 +1,3 @@
-import { SimplErrorEksekusi } from "./SimplError.js";
-
 // Environment defines a scope for all data to live in
 export class Environment {
 

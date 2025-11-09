@@ -1,21 +1,30 @@
 import { Interpreter } from "./Interpreter.js";
 import { Lexer } from "./Lexer.js";
 import { Parser } from "./Parser.js";
+import { SimplError } from "./SimplError.js";
 
 // Simpl: Indonesian Mock Programming Language
 
 export class Simpl {
 
   runCode(code) {
-    console.log(code);
-    let lexer = new Lexer();
-    let tokens = lexer.scanTokens(code);
-    let parser = new Parser();
-    let tree = parser.parse(tokens);
-    let inter = new Interpreter();
-    if (tree) {
-      // deepPrint(tree);
-      inter.interpret(tree);
+    console.log(code.split("\n").reduce((codeStr, line, idx)=>codeStr + `${idx+1}.  ${line}\n`, ''));
+    try {
+      let lexer = new Lexer();
+      let tokens = lexer.scanTokens(code);
+      let parser = new Parser();
+      let tree = parser.parse(tokens);
+      let inter = new Interpreter();
+      if (tree) {
+        // deepPrint(tree);
+        inter.interpret(tree);
+      }
+    } catch (err) {
+      if (err instanceof SimplError) {
+        console.log(err.message);
+      } else {
+        console.log(err)
+      }
     }
   }
 }
@@ -70,12 +79,13 @@ function deepPrint(value, indent = 0, visited = new WeakSet()) {
   console.log(`${pad}}`);
 }
 
-
-
 let simp = new Simpl();
 simp.runCode
 (`
-  cetak mesin()
+  mesin real ==> (angka a, angka b, angka o) {
+    hasil a+b
+  }
+
 `);
 
 console.log()

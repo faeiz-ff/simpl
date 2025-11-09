@@ -1,7 +1,7 @@
 import * as TokenType from "./TokenType.js";
 import * as Expr from "./Expr.js";
 import * as Stmt from "./Stmt.js";
-import { SimplError, SimplErrorStrukturSintaks } from "./SimplError.js"; 
+import { SimplErrorStruktur } from "./SimplError.js"; 
 
 export class Parser {
     constructor() {
@@ -74,6 +74,7 @@ export class Parser {
     lambda() {
         let params = [];
         this.eat(TokenType.LPAREN, "Mengharapkan '(' setelah '=>' untuk deklarasi Lamda.")
+
         if (this.match(TokenType.ID)) {
             let type = this.typeStmt();
             this.eat(TokenType.ID, "Mengharapkan Nama parameter setelah deklarasi Tipe parameter dalam Lamda.");
@@ -93,6 +94,11 @@ export class Parser {
         let returnType = null;
         if (this.match(TokenType.ID)) {
             returnType = this.typeStmt();
+        } if (this.match(TokenType.LITERAL)) {
+            if (this.previous().value !== null) {
+                this.error("Mengharapkan Tipe Hasil yang valid.");
+            }
+            returnType = null;
         }
         this.eat(TokenType.LCURLY, "Mengharapkan Blok { } untuk Lamda.");
         let block = this.blockStmt();
@@ -196,7 +202,7 @@ export class Parser {
     term() {
         let expr = this.factor();
 
-        while (this.match(TokenType.PLUS, TokenType.MINUS)) {
+        while (this.match(TokenType.MODULUS, TokenType.PLUS, TokenType.MINUS)) {
             let op = this.previous();
             let right = this.factor();
             expr = new Expr.Binary(expr, op, right);
@@ -302,7 +308,7 @@ export class Parser {
             } else if (this.match(TokenType.LCURLY)) {
                 let elseCond = null;
                 let elseBlock = this.blockStmt();
-                elseKalau = new Stmt.Kalau(elseCond, elseBlock, null);
+                elseKalau = new Stmt.Kalau(elseCond, elseBlock);
             } else {
                 this.error("Mengharapkan sebuah 'kalau' atau blok { } setelah 'namun'.")
             }
@@ -419,7 +425,7 @@ export class Parser {
     }
 
     error(errmsg, found = true) {
-        throw new SimplErrorStrukturSintaks(`Error Penulisan: [Baris ${this.see().line}] ` + errmsg + ((found) ? ` Menemukan '${this.see().lexeme }'.` : ""));
+        throw new SimplErrorStruktur(`Error Penulisan: [Baris ${this.see().line}] ` + errmsg + ((found) ? ` Menemukan '${this.see().lexeme }'.` : ""));
     }
 
     parse(tokens) {
