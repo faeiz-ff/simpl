@@ -1,7 +1,3 @@
-import * as Expr from "./Expr.js";
-import { Token } from "./Token.js";
-import { ID } from "./TokenType.js";
-import * as Stmt from "./Stmt.js";
 import { SimplErrorEksekusi } from "./SimplError.js";
 import { Environment } from "./Environment.js";
 import * as Value from "./Value.js";
@@ -26,14 +22,15 @@ export class Interpreter {
     constructor() {
         this.globalEnvironment = Value.GLOBAL_ENV;
         this.init();
-        this.state = location.GLOBAL;
-        this.stack = [];
     }
 
     init() {
         this.tree = null;
         this.line = 0;
         this.environment = new Environment(this.globalEnvironment);
+        this.state = location.GLOBAL;
+        this.stack = [];
+        this.output = [];
     }
 
     // EXPRESSION VISITORS
@@ -61,10 +58,12 @@ export class Interpreter {
             let v = expr.accept(this);
             // value.data.push(v);
             if (lastType && lastType !== v.type) {
-                this.error("Elemen-elemen dalam baris harus seragam.");
+                this.error(`Elemen-elemen dalam baris harus mempunyai tipe yang sama: ${lastType.description} != ${v.type.description}`);
             } else if (!lastType) {
                 lastType = v.type;
             }
+            let result = new Value.Value(v.type, v.data);
+            result.member = v.member;
             value.data.push(new Value.Value(v.type, v.data));
         }
 
@@ -74,6 +73,9 @@ export class Interpreter {
     visitIndexExpr(indexExpr) {
         // a real TODO would've been to implement real iterables
         let iterable = indexExpr.iterable.accept(this);
+        if (iterable.type === Value.petikSymbol) {
+            iterable = new Value.Value(Value.barisSymbol, iterable.data.split("").map(str=>new Value.Value(Value.petikSymbol, str)));
+        }
         if (iterable.type !== Value.barisSymbol) {
             this.error("Bukan baris, tidak bisa di-indeks");
         }
@@ -84,7 +86,7 @@ export class Interpreter {
         }
 
         if (index.data >= iterable.data.length) {
-            this.error("Indeks lebih besar atau sama dengan ukuran baris");
+            this.error(`Indeks lebih besar atau sama dengan ukuran baris: ${index.data} >= ${iterable.data.length}`);
         }
         let i = index.data;
 
@@ -200,14 +202,14 @@ export class Interpreter {
             } else if (thing.type === Value.angkaSymbol) {
                 return thing.data.toString();
             } else if (thing.type === Value.petikSymbol) {
-                return '"' + thing.data + '"';
+                return thing.data;
             } else {
                 if (!thing?.type) return `nihil`;
-                return `objek<${thing.type.description}>`;
+                return `${thing.type.description}<>`;
             }
         }
 
-        console.log(">> " + kePetik(result));
+        this.output.push(kePetik(result));
 
     }
 
@@ -276,7 +278,7 @@ export class Interpreter {
     visitKalauStmt(kalauStmt) {
         // condition may be null for 'namun', accept the thenBlock if it is
         let condition = kalauStmt.condition?.accept(this);
-        if (condition === null || condition === undefined || condition.data) {
+        if (condition === null || condition === undefined || condition.data || condition.member) {
             kalauStmt.thenBlock.accept(this);
         } else {
             kalauStmt.elseKalau?.accept(this); // kalau may not have namun
@@ -304,7 +306,10 @@ export class Interpreter {
     }
 
     visitSlagiStmt(slagiStmt) {
-        while (slagiStmt.condition.accept(this).data) {
+        const checkTruthy = (v) => v.data || v.member;
+        let lastEnv = this.environment;
+        while (checkTruthy(slagiStmt.condition.accept(this))) {
+            this.environment = new Environment(lastEnv);
             try {
                 for (let stmt of slagiStmt.block.statements) {
                     this.state = location.SLAGI;
@@ -319,6 +324,7 @@ export class Interpreter {
                 } else throw err;
             }
         }
+        this.environment = lastEnv;
         if (this.stackNum !== 0) this.state = location.MESIN;
         else this.state = location.GLOBAL;
     }
@@ -328,12 +334,15 @@ export class Interpreter {
         let type = untukStmt.varType.accept(this);
         
         let iter = untukStmt.iterable.accept(this);
+        if (iter.type === Value.petikSymbol) {
+            iter = new Value.Value(Value.barisSymbol, iter.data.split("").map(str=>new Value.Value(Value.petikSymbol, str)));
+        }
         if (iter.type !== Value.barisSymbol) {
-            this.error("Pernyataan 'untuk' harus mengiterasi sebuah baris.");
+            this.error("Pernyataan 'untuk' harus mengiterasi sebuah baris atau petik.");
         }
 
         for (let i of iter.data) {
-            if (i.type !== type) this.error("Tipe data tidak sama: " + `${i.type.description} != ${type.description}.`);
+            if (i.type !== type) this.error(`Tipe data tidak sama: ${i.type.description} != ${type.description}.`);
 
             let untukEnv = new Environment(this.environment);
             untukEnv.define(name, new Value.Variable(type, untukStmt.varType.tetap, i.data));
@@ -361,6 +370,11 @@ export class Interpreter {
         }
         if (this.stackNum !== 0) this.state = location.MESIN;
         else this.state = location.GLOBAL;
+    }
+
+    visitJenisStmt(jenisStmt) {
+        let name = jenisStmt.name.lexeme;
+        this.environment.define(name, new Value.Jenis(name, jenisStmt.enums));
     }
 
     visitSimplStmt(simpl) {
@@ -394,7 +408,9 @@ export class Interpreter {
     }
 
     interpret(tree) {
+        this.init();
         this.tree = tree;
         tree.accept(this);
+        return this.output;
     }
 }

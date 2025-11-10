@@ -416,9 +416,9 @@ export class Parser {
         } else if (this.match(TokenType.HASIL)) {
             return new Stmt.Hasil(this.expression());
         } else if (this.match(TokenType.JENIS)) {
-            this.error(`Pernyataan 'jenis' harus diletakkan di luar blok.`, false);
+            return this.jenisStmt();
         } else if (this.match(TokenType.MODEL)) {
-            this.error(`Pernyataan 'model' harus diletakkan di luar blok.`, false);
+            return this.modelStmt();
         } else {
             this.error(`Pernyataan tidak bisa diawali '${this.see().lexeme}'.`, false);
         }
@@ -431,74 +431,10 @@ export class Parser {
     parse(tokens) {
         this.tokens = tokens;
         let treeList = [];
-        try {
-            while(!this.match(TokenType.EOF)) {
-                if (this.match(TokenType.JENIS)) {
-                    treeList.push(this.jenisStmt());
-                    continue;
-                } else if (this.match(TokenType.MODEL)) {
-                    treeList.push(this.modelStmt());
-                    continue;
-                }
-                treeList.push(this.statement());
-            }
-        } catch (err) {
-            console.log(err);
-            return null;
+        while(!this.match(TokenType.EOF)) {
+            treeList.push(this.statement());
         }
         this.tree = new Stmt.Simpl(treeList);
         return this.tree;
     }
 }
-
-// print
-function deepPrint(value, indent = 0, visited = new WeakSet()) {
-  const pad = '  '.repeat(indent);
-
-  if (value === null) {
-    console.log(`${pad}null`);
-    return;
-  }
-
-  const type = typeof value;
-
-  if (type !== 'object') {
-    console.log(`${pad}${String(value)}`);
-    return;
-  }
-
-  if (visited.has(value)) {
-    console.log(`${pad}[Circular]`);
-    return;
-  }
-  visited.add(value);
-
-  if (Array.isArray(value)) {
-    console.log(`${pad}[`);
-    for (const item of value) {
-      deepPrint(item, indent + 1, visited);
-    }
-    console.log(`${pad}]`);
-    return;
-  }
-
-  // determine constructor name
-  const ctorName = value.constructor && value.constructor !== Object
-    ? value.constructor.name
-    : 'Object';
-
-  console.log(`${pad}${ctorName} {`);
-  const keys = Reflect.ownKeys(value);
-  for (const key of keys) {
-    const val = value[key];
-    process.stdout.write(`${pad}  ${String(key)}: `);
-    if (typeof val === 'object' && val !== null) {
-      console.log();
-      deepPrint(val, indent + 2, visited);
-    } else {
-      console.log(val);
-    }
-  }
-  console.log(`${pad}}`);
-}
-

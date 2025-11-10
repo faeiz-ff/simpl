@@ -1,1 +1,1 @@
-console.log("foreSDFGach".toLowerCase())
+console.log(Array(5).fill(0).map((_,idx)=>idx))

@@ -39,7 +39,7 @@ export class Lexer {
     }
 
     isAlphaNumeric(char) {
-        return this.isAlpha(char) || this.isNumeric(char);
+        return this.isAlpha(char) || this.isNumeric(char) || char === "?";
     }
 
     skipWhitespaces() {
@@ -195,7 +195,7 @@ export class Lexer {
         }
         if (this.isAtEnd()) return;
 
-        throw new SimplErrorTulisan(`[Baris ${this.lineIndex}] karakter tidak valid. Menemukan ${this.see()}`);
+        throw new SimplErrorTulisan(`[Baris ${this.lineIndex}] karakter tidak valid: Menemukan '${this.see()}'.`);
     }
 
     debugPrintTokens(tokens) {

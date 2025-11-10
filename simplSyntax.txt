@@ -10,7 +10,7 @@ tetap
 angka umur = (19 - 5 * 2) + (10 + 10) / 2
 petik nama = "zie"
 logis waras = benar == !benar | benar & salah
-baris<petik> tetap dialog_dialog = ["Halo,", "Apa kabar?"]
+baris tetap dialog_dialog = ["Halo,", "Apa kabar?"]
 
 kalau waras {
   cetak "dia waras"

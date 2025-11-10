@@ -59,7 +59,7 @@ class PetikTipe extends Stipe {
               {
                 callFunc: (v,args) => {
                     if (args.length !== 1) {
-                        v.error("Jumlah argumen tidak sama dengan parameter mesin:" + ` ${args.length} != 1.`);
+                        v.error(`Jumlah argumen tidak sama dengan parameter mesin: ${args.length} != 1.`);
                     }
 
                     const kePetik = (thing) => {
@@ -100,7 +100,7 @@ class PetikTipe extends Stipe {
         this.operators.define("LESS_EQUAL",
             makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data<=r.data)));
         this.operators.define("BANG_EQUAL",
-            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data!=r.data)));
+            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data!==r.data)));
         this.operators.define("AMPERSAND",
             makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data&&r.data)));
         this.operators.define("PIPE",
@@ -115,7 +115,7 @@ class AngkaTipe extends Stipe {
         super(angkaSymbol, {
             callFunc: (v, args) => {
                 if (args.length !== 1) {
-                    v.error("Jumlah argumen tidak sama dengan parameter mesin:" + ` ${args.length} != 1.`);
+                    v.error(`Jumlah argumen tidak sama dengan parameter mesin: ${args.length} != 1.`);
                 }
 
                 switch (args[0].type) {
@@ -129,7 +129,7 @@ class AngkaTipe extends Stipe {
                     case logisSymbol:
                         return new Value(angkaSymbol, Number(args[0].data));
                     default:
-                        v.error("Tipe yang dapat diterima hanyalah petik, angka, dan logis." + ` Mendapatkan ${args[0].type.description}.`);
+                        v.error(`Tipe yang dapat diterima hanyalah petik, angka, dan logis. Mendapatkan ${args[0].type.description}.`);
                         return;
                 }
             }
@@ -160,7 +160,7 @@ class AngkaTipe extends Stipe {
         this.operators.define("LESS_EQUAL",
             makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data<=r.data)));
         this.operators.define("BANG_EQUAL",
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data!=r.data)));
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data!==r.data)));
         this.operators.define("AMPERSAND",
             makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data&&r.data)));
         this.operators.define("PIPE",
@@ -175,10 +175,10 @@ class LogisTipe extends Stipe {
         super(logisSymbol, {
             callFunc: (v, args) => {
                 if (args.length !== 1) {
-                    v.error("Jumlah argumen tidak sama dengan parameter mesin:" + ` ${args.length} != 1.`);
+                    v.error(`Jumlah argumen tidak sama dengan parameter mesin: ${args.length} != 1.`);
                 }
 
-                return new Value(logisSymbol, Boolean(args[0].data));
+                return new Value(logisSymbol, Boolean(args[0].data) || Boolean(args[0].data.member));
             }
         });
         this.init();
@@ -188,7 +188,7 @@ class LogisTipe extends Stipe {
         this.operators.define("EQUAL_EQUAL", 
             makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data===r.data)));
         this.operators.define("BANG_EQUAL",
-            makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data!=r.data)));
+            makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data!==r.data)));
 
         this.operators.define("AMPERSAND",
             makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data&&r.data)));
@@ -207,7 +207,9 @@ class BarisTipe extends Stipe {
 
     init () {
         this.operators.define("PLUS", 
-            makeBuiltInFunc([barisSymbol, barisSymbol], barisSymbol, (v, [r,l]) => new Value(barisSymbol, Array(...l.data, ...r.data))));
+            makeBuiltInFunc([barisSymbol, barisSymbol], barisSymbol, (v, [r,l]) => l.data.length >= 1 && r.data.length >= 1 && l.data[0].type !== r.data[0].type 
+                ? v.error(`Elemen-elemen dalam baris harus mempunyai tipe yang sama. ${l.data[0].type.description} != ${r.data[0].type.description}`) 
+                : new Value(barisSymbol, Array(...l.data, ...r.data))));
 
         this.operators.define("EQUAL_EQUAL",
             makeBuiltInFunc([barisSymbol, barisSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, ((a,b)=>{
@@ -268,7 +270,8 @@ export class Model extends Stipe {
                         v.line = callLineNum;
                         v.error(`Tipe member tidak sama dengan argumen.`);
                     }
-                    let val = new Variable(symbol, type.tetap, args[i].data)
+                    let val = new Variable(symbol, type.tetap, args[i].data);
+                    val.member = args[i].member;
                     obj.member.define(name, val);
                 }
 
@@ -277,6 +280,24 @@ export class Model extends Stipe {
                 return obj;
             }
         });
+    }
+}
+
+export class Jenis extends Stipe {
+    constructor(name, enums) {
+        let sym = Symbol(name);
+        super(sym, null);
+        enums.forEach(thing => {
+            this.member.define(thing.lexeme, new Value(sym, Symbol(thing.lexeme)));
+        });
+        this.init(sym);
+    }
+
+    init(sym) {
+        this.operators.define("EQUAL_EQUAL", 
+            makeBuiltInFunc([sym, sym], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data===r.data)));
+        this.operators.define("BANG_EQUAL",
+            makeBuiltInFunc([sym, sym], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data!==r.data)));
     }
 }
 
@@ -356,5 +377,18 @@ export const GLOBAL_ENV = (() => {
     env.define("logis", new LogisTipe());
     env.define("baris", new BarisTipe());
     env.define("mesin", new MesinTipe());
+
+    env.define("jarak", makeBuiltInFunc([angkaSymbol, angkaSymbol], barisSymbol, 
+        (v, [from, to])=>new Value(barisSymbol, 
+            Array(to.data-from.data)
+                .fill(0)
+                .map((val, idx)=>new Value(angkaSymbol, from.data+idx))))
+    );
+
+    env.define("nihil?", new Variable(mesinSymbol, true, {callFunc: (v, [d]) => new Value(logisSymbol, d.data === null)}));
+    env.define("ukuran", new Variable(mesinSymbol, true, {callFunc: (v, [d]) => d.type === barisSymbol || d.type === petikSymbol 
+        ? new Value(angkaSymbol, d.data.length)
+        : v.error(`Ukuran hanya terdapat untuk tipe petik atau baris. Menemukan tipe ${d.type.description}.`)}));
+
     return env;
 })();
