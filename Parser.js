@@ -66,7 +66,7 @@ export class Parser {
             } while(this.match(TokenType.COMMA))
         }
 
-        this.eat(TokenType.RPAREN, "Mengharapkan ')' setelah pemanggilan fungsi");
+        this.eat(TokenType.RPAREN, "Mengharapkan ')' setelah pemanggilan mesin.");
 
         return new Expr.Call(callable, args);
     }
@@ -392,6 +392,17 @@ export class Parser {
         return new Stmt.Model(id, contents);
     }
 
+    modulStmt() {
+        this.eat(TokenType.ID, "Mengharapkan Nama modul setelah deklarasi.");
+        let token = this.previous();
+        this.eat(TokenType.LCURLY, "Mengharapkan '{' setelah Nama modul.");
+        let statements = [];
+        while(!this.match(TokenType.RCURLY)) {
+            statements.push(this.statement());
+        }
+        return new Stmt.Modul(token, statements);
+    }
+
     statement() {
         if(this.match(TokenType.CETAK)) {
             return this.cetakStmt();
@@ -419,13 +430,15 @@ export class Parser {
             return this.jenisStmt();
         } else if (this.match(TokenType.MODEL)) {
             return this.modelStmt();
+        } else if (this.match(TokenType.MODUL)) {
+            return this.modulStmt();
         } else {
             this.error(`Pernyataan tidak bisa diawali '${this.see().lexeme}'.`, false);
         }
     }
 
     error(errmsg, found = true) {
-        throw new SimplErrorStruktur(`Error Penulisan: [Baris ${this.see().line}] ` + errmsg + ((found) ? ` Menemukan '${this.see().lexeme }'.` : ""));
+        throw new SimplErrorStruktur(`Error Struktur [Pada baris ke-${this.see().line}] ` + errmsg + ((found) ? ` Menemukan '${this.see().lexeme }'.` : ""));
     }
 
     parse(tokens) {

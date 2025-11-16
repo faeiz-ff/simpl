@@ -12,7 +12,8 @@ export const petikSymbol = Symbol("petik"),
              logisSymbol = Symbol("logis"),
              mesinSymbol = Symbol("mesin"),
              barisSymbol = Symbol("baris"),
-             stipeSymbol = Symbol("stipe");
+             stipeSymbol = Symbol("stipe"),
+             modulSymbol = Symbol("modul");
 
 export class Value {
     constructor(type, data) {
@@ -33,12 +34,11 @@ export class Stipe extends Variable {
         super(stipeSymbol, true, data);
         this.symbol = type;
         this.operators = new Environment();
-        this.member = new Environment();
-        this.method = new Environment();
+        this.member = null;
     }
 
     operate(visitor, op, right, left) {
-        let opLexeme = TokenType.TOKEN_STRING[op];
+        let opLexeme = TokenType.TOKEN_STRING[op] + (left ? "" : "_UNARY");
         let operatorFunc = this.operators.get(opLexeme);
         if (!operatorFunc)
             visitor.error(`operator ${opLexeme} tidak terdefinisi untuk Model ${right.type.description}.`);
@@ -89,24 +89,31 @@ class PetikTipe extends Stipe {
         // BINARY / UNARY OPERATORS
         this.operators.define("PLUS", 
             makeBuiltInFunc([petikSymbol, petikSymbol], petikSymbol, (v, [r, l]) => new Value(petikSymbol, l.data+r.data)));
-        this.operators.define("GREATER", 
+        this.operators.define("LEBIH", 
             makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data>r.data)));
-        this.operators.define("LESS", 
+        this.operators.define("KURANG", 
             makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data<r.data)));
-        this.operators.define("EQUAL_EQUAL", 
+        this.operators.define("SAMA_SAMA", 
             makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data===r.data)));
-        this.operators.define("GREATER_EQUAL",
+        this.operators.define("LEBIH_SAMA",
             makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data>=r.data)));
-        this.operators.define("LESS_EQUAL",
+        this.operators.define("KURANG_SAMA",
             makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data<=r.data)));
-        this.operators.define("BANG_EQUAL",
+        this.operators.define("SERU_SAMA",
             makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data!==r.data)));
-        this.operators.define("AMPERSAND",
+        this.operators.define("AMPERSAN",
             makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data&&r.data)));
-        this.operators.define("PIPE",
+        this.operators.define("PIPA",
             makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data||r.data)));
-        this.operators.define("BANG",
-            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, !Boolean(r.data))));
+
+        this.operators.define("SERU_UNARY",
+            makeBuiltInFunc([petikSymbol], logisSymbol, (v, [r]) => new Value(logisSymbol, !Boolean(r.data))));
+
+        this.member = new Environment();
+
+        this.member.define("pisah", makeBuiltInFunc([petikSymbol, petikSymbol], barisSymbol, (v, [d, sep])=>{
+            return new Value(barisSymbol, d.data.split(sep.data).map(val=>new Value(petikSymbol, val)));
+        }));
     }
 }
 
@@ -139,34 +146,40 @@ class AngkaTipe extends Stipe {
 
     init() {
         this.operators.define("PLUS", 
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (v, [r, l={data:0}]) => new Value(angkaSymbol, l.data+r.data)));
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (v, [r, l]) => new Value(angkaSymbol, l.data+r.data)));
         this.operators.define("MINUS",
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (v, [r, l={data:0}]) => new Value(angkaSymbol, l.data-r.data)));
-        this.operators.define("STAR",  
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (v, [r, l]) => new Value(angkaSymbol, l.data-r.data)));
+        this.operators.define("BINTANG",  
             makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (v, [r, l]) => new Value(angkaSymbol, l.data*r.data)));
-        this.operators.define("SLASH",
+        this.operators.define("GARIS_MIRING",
             makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (v, [r, l]) => new Value(angkaSymbol, l.data/r.data)));
         this.operators.define("MODULUS", 
             makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (v, [r, l]) => new Value(angkaSymbol, l.data%r.data)));
 
-        this.operators.define("GREATER", 
+        this.operators.define("LEBIH", 
             makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data>r.data)));
-        this.operators.define("LESS", 
+        this.operators.define("KURANG", 
             makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data<r.data)));
-        this.operators.define("EQUAL_EQUAL", 
+        this.operators.define("SAMA_SAMA", 
             makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data===r.data)));
-        this.operators.define("GREATER_EQUAL",
+        this.operators.define("LEBIH_SAMA",
             makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data>=r.data)));
-        this.operators.define("LESS_EQUAL",
+        this.operators.define("KURANG_SAMA",
             makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data<=r.data)));
-        this.operators.define("BANG_EQUAL",
+        this.operators.define("SERU_SAMA",
             makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data!==r.data)));
-        this.operators.define("AMPERSAND",
+        this.operators.define("AMPERSAN",
             makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data&&r.data)));
-        this.operators.define("PIPE",
+        this.operators.define("PIPA",
             makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data||r.data)));
-        this.operators.define("BANG",
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, !Boolean(r.data))));
+        this.operators.define("SERU_UNARY",
+            makeBuiltInFunc([angkaSymbol], logisSymbol, (v, [r]) => new Value(logisSymbol, !Boolean(r.data))));
+        this.operators.define("PLUS_UNARY",
+            makeBuiltInFunc([angkaSymbol], angkaSymbol, (v, [r]) => new Value(angkaSymbol, +r.data)));
+        this.operators.define("MINUS_UNARY",
+            makeBuiltInFunc([angkaSymbol], angkaSymbol, (v, [r]) => new Value(angkaSymbol, -r.data)));
+
+        this.member = new Environment();
     }
 }
 
@@ -185,17 +198,19 @@ class LogisTipe extends Stipe {
     }
 
     init() {
-        this.operators.define("EQUAL_EQUAL", 
+        this.operators.define("SAMA_SAMA", 
             makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data===r.data)));
-        this.operators.define("BANG_EQUAL",
+        this.operators.define("SERU_SAMA",
             makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data!==r.data)));
 
-        this.operators.define("AMPERSAND",
+        this.operators.define("AMPERSAN",
             makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data&&r.data)));
-        this.operators.define("PIPE",
+        this.operators.define("PIPA",
             makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data||r.data)));
-        this.operators.define("BANG",
-            makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, !Boolean(r.data))));
+        this.operators.define("SERU_UNARY",
+            makeBuiltInFunc([logisSymbol], logisSymbol, (v, [r]) => new Value(logisSymbol, !Boolean(r.data))));
+        
+        this.member = true;
     }
 }
 
@@ -211,7 +226,14 @@ class BarisTipe extends Stipe {
                 ? v.error(`Elemen-elemen dalam baris harus mempunyai tipe yang sama. ${l.data[0].type.description} != ${r.data[0].type.description}`) 
                 : new Value(barisSymbol, Array(...l.data, ...r.data))));
 
-        this.operators.define("EQUAL_EQUAL",
+        this.operators.define("MINUS_UNARY",
+            makeBuiltInFunc([barisSymbol], barisSymbol, (v, [r]) => {
+                let newBaris = copier(r);
+                newBaris.data.pop();
+                return newBaris;
+            }));
+
+        this.operators.define("SAMA_SAMA",
             makeBuiltInFunc([barisSymbol, barisSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, ((a,b)=>{
                 if (a.length !== b.length) return false;
                 for (let i = 0; i < a.length; i++) {
@@ -221,7 +243,7 @@ class BarisTipe extends Stipe {
             })(l.data,r.data)))
         );
 
-        this.operators.define("BANG_EQUAL", 
+        this.operators.define("SERU_SAMA", 
             makeBuiltInFunc([barisSymbol, barisSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, ((a,b)=>{
                 if (a.length !== b.length) return true;
                 for (let i = 0; i < a.length; i++) {
@@ -231,18 +253,28 @@ class BarisTipe extends Stipe {
             })(l.data,r.data)))
         );
 
-        this.operators.define("AMPERSAND",
-            makeBuiltInFunc([barisSymbol, barisSymbol], barisSymbol, (v, [r, l]) => new Value(barisSymbol, l.data&&r.data)));
-        this.operators.define("PIPE",
-            makeBuiltInFunc([barisSymbol, barisSymbol], barisSymbol, (v, [r, l]) => new Value(barisSymbol, l.data||r.data)));
-        this.operators.define("BANG",
-            makeBuiltInFunc([barisSymbol, barisSymbol], barisSymbol, (v, [r, l]) => new Value(barisSymbol, !Boolean(r.data))));
+        this.operators.define("AMPERSAN",
+            makeBuiltInFunc([barisSymbol, barisSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data&&r.data)));
+        this.operators.define("PIPA",
+            makeBuiltInFunc([barisSymbol, barisSymbol], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data||r.data)));
+        this.operators.define("SERU_UNARY",
+            makeBuiltInFunc([barisSymbol], logisSymbol, (v, [r]) => new Value(logisSymbol, !Boolean(r.data))));
+
+        this.member = new Environment();
+
+        this.member.define("hapus", makeBuiltInFunc([barisSymbol, angkaSymbol], barisSymbol, (v, [b, i]) => {
+            if (b.data.length <= i.data) {
+                v.error(`Indeks tidak boleh lebih besar atau sama dengan ukuran baris, ${i.data} >= ${b.data.length}`);
+            }
+            return new Value(barisSymbol, b.data.filter((val, idx)=>idx!==i.data).map((val)=>copier(val)));
+        }));
     }
 }
 
 class MesinTipe extends Stipe {
     constructor() {
         super(mesinSymbol);
+        this.member = true;
     }
 }
 
@@ -268,7 +300,7 @@ export class Model extends Stipe {
                         
                     } else if (symbol !== args[i].type) {
                         v.line = callLineNum;
-                        v.error(`Tipe member tidak sama dengan argumen.`);
+                        v.error(`Tipe member tidak sama dengan argumen. ${symbol.description} != ${args[i].type.description}`);
                     }
                     let val = new Variable(symbol, type.tetap, args[i].data);
                     val.member = args[i].member;
@@ -294,9 +326,9 @@ export class Jenis extends Stipe {
     }
 
     init(sym) {
-        this.operators.define("EQUAL_EQUAL", 
+        this.operators.define("SAMA_SAMA", 
             makeBuiltInFunc([sym, sym], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data===r.data)));
-        this.operators.define("BANG_EQUAL",
+        this.operators.define("SERU_SAMA",
             makeBuiltInFunc([sym, sym], logisSymbol, (v, [r, l]) => new Value(logisSymbol, l.data!==r.data)));
     }
 }
@@ -353,15 +385,17 @@ export class Callable {
     }
 }
 
+// this approach is too slow. Will fix later...
+
 function makeBuiltInFunc(parameters, returnType, funcBody) {
     let lambda = new Callable(null, null, parameters.map((val)=>[val]), returnType);
     lambda.callFunc = (v, args) => {
         if (args.length != parameters.length) {
-            v.error("Jumlah Argumen tidak sama dengan parameter:" + `${args.length} != ${parameters.length}.`);
+            v.error("Jumlah Argumen tidak sama dengan parameter:" + ` Seharusnya ${parameters.length} dan bukan ${args.length}.`);
         } 
         for (let i = 0; i < args.length; i++) {
             if (args[i].type !== parameters[i]) {
-                v.error("tipe argumen tidak sama dengan tipe parameter." + `${args[i].type.description} != ${parameters[i].description}`);
+                v.error("Tipe argumen tidak sama dengan tipe parameter." + ` Seharusnya ${parameters[i].type.description} dan bukan ${args[i].description}`);
             }
         }
         return funcBody(v, args);
@@ -369,6 +403,34 @@ function makeBuiltInFunc(parameters, returnType, funcBody) {
     let variable = new Variable(mesinSymbol, true, lambda);
     return variable;
 }
+
+function copier(thing) {
+    switch(thing.type) {
+        case petikSymbol: return new Value(petikSymbol, thing.data);
+        case angkaSymbol: return new Value(angkaSymbol, thing.data);
+        case logisSymbol: return new Value(logisSymbol, thing.data);
+        case mesinSymbol: return new Value(mesinSymbol, thing.data);
+        case barisSymbol: return new Value(barisSymbol, thing.data.map((val)=>copier(val)));
+        case stipeSymbol: v.error("Tidak dapat menyalin tipe.");
+        case modulSymbol: v.error("Tidak dapat menyalin modul.");
+        default:
+            if (thing.member && thing.member instanceof Environment) {
+                let keys = thing.member.memory.keys();
+                let valCopy = new Value(thing.type, null);
+                let newMember = new Environment();
+                for (let i of keys) {
+                    if (i === "objek") continue;
+                    newMember.define(i, copier(thing.member.get(i)));
+                }
+                newMember.define("objek", valCopy);
+                valCopy.member = newMember;
+
+                return valCopy;
+            }
+            return new Value(null, null);
+    }
+}
+
 
 export const GLOBAL_ENV = (() => { 
     let env = new Environment();
@@ -388,7 +450,12 @@ export const GLOBAL_ENV = (() => {
     env.define("nihil?", new Variable(mesinSymbol, true, {callFunc: (v, [d]) => new Value(logisSymbol, d.data === null)}));
     env.define("ukuran", new Variable(mesinSymbol, true, {callFunc: (v, [d]) => d.type === barisSymbol || d.type === petikSymbol 
         ? new Value(angkaSymbol, d.data.length)
-        : v.error(`Ukuran hanya terdapat untuk tipe petik atau baris. Menemukan tipe ${d.type.description}.`)}));
+        : v.error(`Ukuran hanya terdapat untuk tipe petik atau baris. Menemukan tipe ${d.type.description}.`)
+    }));
+
+    env.define("salin", new Variable(mesinSymbol, true, {callFunc: (v, [d]) => {
+        return copier(d);
+    }}));
 
     return env;
 })();

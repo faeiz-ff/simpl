@@ -37,7 +37,5 @@ let simp = new Simpl();
 
 console.log(simp.runCode
 (`
-    untuk petik abjad dalam "aiueo" {
-        cetak abjad
-    }
+    cetak - ""
 `), '\n');

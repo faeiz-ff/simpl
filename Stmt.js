@@ -194,3 +194,16 @@ export class Simpl extends StmtBase {
     }
 }
 
+export class Modul extends StmtBase {
+ // Token name, Array<Stmt.StmtBase> statements
+    constructor (name, statements) {
+        super();
+        this.name = name;
+        this.statements = statements;
+    }
+
+    visit(visitor) {
+        return visitor.visitModulStmt(this);
+    }
+}
+

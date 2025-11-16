@@ -1,1 +1,2 @@
-console.log(Array(5).fill(0).map((_,idx)=>idx))
+let m = new Map();
+m.keys()

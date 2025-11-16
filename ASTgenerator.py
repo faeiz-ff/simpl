@@ -84,7 +84,7 @@ def main():
         [
             "rubah", "kalau", "namun", "slagi", "untuk", "cetak",
             "henti", "lewat", "dalam", "hasil", "kerja",
-            "jenis", "model", "error", "tetap",
+            "jenis", "model", "error", "tetap", "modul",
         ],
         [
             "eof", "id", "literal", "plus", "minus", "star",
@@ -102,7 +102,7 @@ def main():
         "Grouping   : Expr.ExprBase expr",
         "Member     : Expr.ExprBase main, Expr.Identifier member",
         "Identifier : Token token",
-        "Lambda     : Array<Stmt.Types-Token> params, Stmt.Type returnValue, Stmt.Block block",
+        "Lambda     : Array<Stmt.Types-Token> params, Stmt.Type returnType, Stmt.Block block",
         "Call       : Expr.ExprBase callable, Expr.ExprBase args",
         "Array      : Array<Expr.ExprBase> contents",
         "Index      : Expr.ExprBase iterable, Expr.ExprBase index"
@@ -124,6 +124,7 @@ def main():
         "Jenis : Token name, Array<Token> enums",
         "Model : Token name, Array<Stmt.Type-Token> contents",
         "Simpl : Array<Stmt.StmtBase> statements",
+        "Modul : Token name, Array<Stmt.StmtBase> statements",
     ])
 
 if __name__ == "__main__":

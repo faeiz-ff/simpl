@@ -195,7 +195,7 @@ export class Lexer {
         }
         if (this.isAtEnd()) return;
 
-        throw new SimplErrorTulisan(`[Baris ${this.lineIndex}] karakter tidak valid: Menemukan '${this.see()}'.`);
+        throw new SimplErrorTulisan(`Error Tulisan [Pada Baris ke-${this.lineIndex}] karakter tidak valid: Menemukan '${this.see()}'.`);
     }
 
     debugPrintTokens(tokens) {

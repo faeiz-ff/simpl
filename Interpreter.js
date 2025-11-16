@@ -77,16 +77,16 @@ export class Interpreter {
             iterable = new Value.Value(Value.barisSymbol, iterable.data.split("").map(str=>new Value.Value(Value.petikSymbol, str)));
         }
         if (iterable.type !== Value.barisSymbol) {
-            this.error("Bukan baris, tidak bisa di-indeks");
+            this.error(`${iterable.type.description} bukan baris/petik, tidak bisa di-indeks`);
         }
 
         let index = indexExpr.index.accept(this);
         if (index.type !== Value.angkaSymbol) {
-            this.error("ekspresi di dalam indeks harus bertipe angka.");
+            this.error(`Ekspresi di dalam indeks harus bertipe angka. Menemukan ${index.type.description}`);
         }
 
         if (index.data >= iterable.data.length) {
-            this.error(`Indeks lebih besar atau sama dengan ukuran baris: ${index.data} >= ${iterable.data.length}`);
+            this.error(`Indeks tidak boleh lebih besar atau sama dengan ukuran baris: ${index.data} >= ${iterable.data.length}`);
         }
         let i = index.data;
 
@@ -101,7 +101,11 @@ export class Interpreter {
             && params.some(param=>params.reduce((count, anotherParam)=>param[2]===anotherParam[2] ? count+1:count, 0) > 1 ? true : false)) {
                 this.error("Parameter mesin tidak boleh mempunyai nama yang sama.");
             }
-        let lambda = new Value.Callable(this.environment, lambdaExpr.block, params);
+        let retType = null;
+        if (lambdaExpr.returnType) {
+            retType = lambdaExpr.returnType.accept(this);
+        }
+        let lambda = new Value.Callable(this.environment, lambdaExpr.block, params, retType);
         return new Value.Value(Value.mesinSymbol, lambda);
     }
 
@@ -173,8 +177,10 @@ export class Interpreter {
         let main = memberExpr.main.accept(this);
         let name = memberExpr.member.token.lexeme;
         this.line = memberExpr.member.token.line;
-        if (!main.member?.has(name)) {
-            this.error(`member .${name} tidak dapat ditemukan.`)
+        if (!main.member) {
+            this.error(`Nilai tidak mempunyai atribut .${name}.`);
+        } else if (!main.member.has(name)) {
+            this.error(`atribut .${name} tidak dapat ditemukan.`)
         }
         return main.member.get(name);
     }
@@ -184,7 +190,7 @@ export class Interpreter {
     // this is needed for interpreting generics TODO!
     visitTypeStmt(typeStmt) {
         let type =  typeStmt.type.accept(this);
-        if (type.type !== Value.stipeSymbol) this.error(`Nilai bukan sebuah Model/Tipe Valid.`);
+        if (type.type !== Value.stipeSymbol) this.error(`${type.type.description} bukan sebuah Model/Tipe Valid.`);
         return type.symbol;
     }
 
@@ -198,7 +204,8 @@ export class Interpreter {
             } else if (thing.type === Value.stipeSymbol) {
                 return `Model<${thing.symbol.description}>`;
             } else if (thing.type === Value.mesinSymbol) {
-                return `Mesin<>`;
+                let underlying = thing.data.returnType?.description;
+                return `Mesin<${underlying? underlying : 'datum'}>`;
             } else if (thing.type === Value.angkaSymbol) {
                 return thing.data.toString();
             } else if (thing.type === Value.petikSymbol) {
@@ -220,7 +227,6 @@ export class Interpreter {
     visitDatumStmt(datumStmt) {
         let type = datumStmt.type.accept(this);
         let name = datumStmt.name.lexeme;
-
         this.line = datumStmt.name.line;
 
         if (this.environment.has(name)) {
@@ -239,7 +245,6 @@ export class Interpreter {
 
         variable.data = value.data; 
         variable.member = value.member;
-        // because data is always primitives (for now), this copies data;
 
         this.environment.define(name, variable);
     }
@@ -338,11 +343,12 @@ export class Interpreter {
             iter = new Value.Value(Value.barisSymbol, iter.data.split("").map(str=>new Value.Value(Value.petikSymbol, str)));
         }
         if (iter.type !== Value.barisSymbol) {
-            this.error("Pernyataan 'untuk' harus mengiterasi sebuah baris atau petik.");
+            this.error(`Pernyataan 'untuk' harus mengiterasi sebuah baris atau petik, bukan ${iter.type.description}`);
         }
 
-        for (let i of iter.data) {
-            if (i.type !== type) this.error(`Tipe data tidak sama: ${i.type.description} != ${type.description}.`);
+        for (let idx = 0; idx < iter.data.length; idx++) {
+            let i = iter.data[idx];
+            if (i.type !== type) this.error(`Tipe data tidak sama pada indeks ke-${idx}: ${i.type.description} != ${type.description}.`);
 
             let untukEnv = new Environment(this.environment);
             untukEnv.define(name, new Value.Variable(type, untukStmt.varType.tetap, i.data));
@@ -385,7 +391,39 @@ export class Interpreter {
 
     visitModelStmt(modelStmt) {
         let name = modelStmt.name.lexeme;
+        this.line = modelStmt.name.token;
         this.environment.define(name, new Value.Model(name, modelStmt.contents));
+    }
+
+    visitModulStmt(modulStmt) {
+        let name = modulStmt.name.lexeme;
+        this.line = modulStmt.name.line;
+        let variable = this.environment.get(name);
+        if (variable) {
+            if (variable.type !== Value.stipeSymbol) {
+                this.error(`Modul hanya bisa _ditambahkan_ pada tipe. ${name} bukan merupakan tipe.`);
+            }
+            if (variable.member) {
+                this.error(`Tipe ${name} sudah memiliki modul sendiri, tidak bisa definisi ulang.`);
+            }
+        }
+
+        let lastEnv = this.environment;
+        this.environment = new Environment(this.globalEnvironment);
+        if (variable) this.environment.define(name, variable);
+        for (let stmt of modulStmt.statements) {
+            stmt.accept(this);
+        }
+
+        [this.environment, lastEnv] = [lastEnv, this.environment];
+
+        if (variable) {
+            variable.member = lastEnv;
+        } else {
+            let res = new Value.Variable(Value.modulSymbol, true, null);
+            res.member = lastEnv;
+            this.environment.define(name, res);
+        }
     }
 
     // UTILITIES
@@ -404,7 +442,7 @@ export class Interpreter {
     }
 
     error(message) {
-        throw new SimplErrorEksekusi(`[Baris ${this.line}] ` + message);
+        throw new SimplErrorEksekusi(`Error Eksekusi [Pada baris ke-${this.line}] ${message}`);
     }
 
     interpret(tree) {
