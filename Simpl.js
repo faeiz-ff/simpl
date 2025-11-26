@@ -37,5 +37,15 @@ let simp = new Simpl();
 
 console.log(simp.runCode
 (`
-    cetak - ""
+    mesin tetap map ==> (baris b, mesin f) baris {
+        baris resultan = []
+        untuk datum d dalam b {
+            rubah resultan = resultan + [f(d)]
+        }
+        hasil resultan
+    }
+
+    cetak map([1,2,3,4,5,6], =>(angka a) angka { hasil a*a } )
+    cetak map(["tan", "man", "no ", "oguri "], =>(petik p) petik { hasil p + "cap" })
+
 `), '\n');

@@ -83,7 +83,7 @@ def main():
     writeType(
         [
             "rubah", "kalau", "namun", "slagi", "untuk", "cetak",
-            "henti", "lewat", "dalam", "hasil", "kerja",
+            "henti", "lewat", "dalam", "hasil", "kerja", "datum",
             "jenis", "model", "error", "tetap", "modul",
         ],
         [

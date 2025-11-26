@@ -53,15 +53,9 @@ export class Interpreter {
     visitArrayExpr(arrayExpr) {
         let value = new Value.Value(Value.barisSymbol, []);
 
-        let lastType = null;
         for (let expr of arrayExpr.contents) {
             let v = expr.accept(this);
             // value.data.push(v);
-            if (lastType && lastType !== v.type) {
-                this.error(`Elemen-elemen dalam baris harus mempunyai tipe yang sama: ${lastType.description} != ${v.type.description}`);
-            } else if (!lastType) {
-                lastType = v.type;
-            }
             let result = new Value.Value(v.type, v.data);
             result.member = v.member;
             value.data.push(new Value.Value(v.type, v.data));
@@ -88,7 +82,6 @@ export class Interpreter {
         if (index.data >= iterable.data.length) {
             this.error(`Indeks tidak boleh lebih besar atau sama dengan ukuran baris: ${index.data} >= ${iterable.data.length}`);
         }
-        let i = index.data;
 
         while (index.data < 0) index.data += iterable.data.length;
         return iterable.data[index.data];
@@ -189,6 +182,7 @@ export class Interpreter {
 
     // this is needed for interpreting generics TODO!
     visitTypeStmt(typeStmt) {
+        if (typeStmt.type === null) return null;
         let type =  typeStmt.type.accept(this);
         if (type.type !== Value.stipeSymbol) this.error(`${type.type.description} bukan sebuah Model/Tipe Valid.`);
         return type.symbol;
@@ -240,8 +234,13 @@ export class Interpreter {
         let value = datumStmt.expr.accept(this);
 
         if (value.data === null) value.type = variable.type; // if nihil, ok
+        else if (value.type === Value.stipeSymbol) 
+            this.error("stipe tidak dapat menjadi nilai.");
 
-        this.typeCheck(variable, value, `Pada pembuatan variabel '${name}'`);
+        if (type === null) {
+            variable.isDatum = true;
+            variable.type = value.type;
+        } else this.typeCheck(variable, value, `Pada pembuatan variabel '${name}'`);
 
         variable.data = value.data; 
         variable.member = value.member;
@@ -257,7 +256,9 @@ export class Interpreter {
         let value = rubahStmt.value.accept(this);
         if (value.data === null) value.type = variable.type; // if nihil, ok
 
-        this.typeCheck(variable, value, `Pada perubahan variabel.`);
+        if (variable.isDatum)
+            variable.type = value.type;
+        else this.typeCheck(variable, value, `Pada perubahan variabel.`);
 
         variable.data = value.data; // reference modifying (THANK GOD FOR THIS I LOVE YOU GARBAGE COLLECTOR)
         variable.member = value.member;
@@ -348,10 +349,13 @@ export class Interpreter {
 
         for (let idx = 0; idx < iter.data.length; idx++) {
             let i = iter.data[idx];
-            if (i.type !== type) this.error(`Tipe data tidak sama pada indeks ke-${idx}: ${i.type.description} != ${type.description}.`);
+            let val = new Value.Variable(i.type, untukStmt.type?.tetap ? untukStmt.type.tetap : false, i.data);
+            if (type === null) {
+                val.isDatum = true;
+            } else if (i.type !== type) this.error(`Tipe data tidak sama pada indeks ke-${idx}: ${i.type.description} != ${type.description}.`);
 
             let untukEnv = new Environment(this.environment);
-            untukEnv.define(name, new Value.Variable(type, untukStmt.varType.tetap, i.data));
+            untukEnv.define(name, val);
             this.environment = untukEnv;
             try {
                 // didn't 'accept' the block, just uses it directly
@@ -436,7 +440,7 @@ export class Interpreter {
 
     nullCheck(...args) {
         for (let i of args) {
-            if (i.data === null) return i;
+            if (i.data === null || i.type === null) return i;
         }
         return false;
     }

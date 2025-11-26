@@ -75,14 +75,15 @@ export class Parser {
         let params = [];
         this.eat(TokenType.LPAREN, "Mengharapkan '(' setelah '=>' untuk deklarasi Lamda.")
 
-        if (this.match(TokenType.ID)) {
+        if (this.match(TokenType.ID, TokenType.DATUM)) {
             let type = this.typeStmt();
             this.eat(TokenType.ID, "Mengharapkan Nama parameter setelah deklarasi Tipe parameter dalam Lamda.");
             let name = this.previous();
             params.push([type, name]);
                 
             while(this.match(TokenType.COMMA)) {
-                this.eat(TokenType.ID, "Mengharapkan Tipe parameter setelah ',' dalam Lamda.");
+                if(!this.match(TokenType.ID, TokenType.DATUM))
+                    this.error("Mengharapkan Tipe parameter setelah koma dalam Lamda.");
                 let type = this.typeStmt();
                 this.eat(TokenType.ID, "Mengharapkan Nama parameter setelah deklarasi Tipe parameter dalam Lamda.");
                 let name = this.previous();
@@ -92,7 +93,7 @@ export class Parser {
         // deepPrint(params);
         this.eat(TokenType.RPAREN, "Mengharapkan ')' setelah deklarasi parameter Lamda.");
         let returnType = null;
-        if (this.match(TokenType.ID)) {
+        if (this.match(TokenType.ID, TokenType.DATUM)) {
             returnType = this.typeStmt();
         } if (this.match(TokenType.LITERAL)) {
             if (this.previous().value !== null) {
@@ -257,12 +258,20 @@ export class Parser {
     }
 
     typeStmt() {
+        if (this.previous().type === TokenType.DATUM) {
+            let tetap = false;
+            if (this.match(TokenType.TETAP)) {
+                tetap = true;
+            }
+            return new Stmt.Type(null, tetap, null);
+        }
+
         let type = this.identifier();
         // while (this.match(TokenType.DOT)) {
         //     type = this.member(type);
         // }
 
-        let contents = [];
+        let contents = null;
         // if (this.match(TokenType.LESS)) {
         //     this.eat(TokenType.ID, "Mengharapkan Tipe setelah '<' di dalam < spesifikasi Tipe >.");
         //     let innerType = this.typeStmt();
@@ -319,7 +328,8 @@ export class Parser {
     }
 
     untukStmt() {
-        this.eat(TokenType.ID, "Mengharapkan Tipe variabel untuk diinisialisasi setelah 'untuk'.")
+        if(!this.match(TokenType.ID, TokenType.DATUM))
+            this.error("Mengharapkan Tipe variabel untuk diinisialisasi setelah 'untuk'.");
         let varType = this.typeStmt();
         this.eat(TokenType.ID, "Mengharapkan Nama variabel setelah Tipe dalam pernyataan 'untuk'.");
         let varName = this.previous();
@@ -379,7 +389,8 @@ export class Parser {
         
         let contents = [];
         do {
-            this.eat(TokenType.ID, "Mengharapkan Tipe member dalam deklarasi 'model'.");
+            if(!this.match(TokenType.ID, TokenType.DATUM))
+                this.error("Mengharapkan Tipe member dalam deklarasi 'Model'.");
             let type = this.typeStmt();
             this.eat(TokenType.ID, "Mengharapkan Nama member dalam deklarasi 'model'.");
             let memberName = this.previous();
@@ -406,7 +417,7 @@ export class Parser {
     statement() {
         if(this.match(TokenType.CETAK)) {
             return this.cetakStmt();
-        } else if (this.match(TokenType.ID)) {
+        } else if (this.match(TokenType.ID, TokenType.DATUM)) {
             return this.datumStmt();
         } else if (this.match(TokenType.KERJA)) {
             return new Stmt.Kerja(this.expression());

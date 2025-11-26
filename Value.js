@@ -4,7 +4,7 @@ import { Henti, Lewat, Hasil } from "./Interpreter.js";
 import * as TokenType from "./TokenType.js";
 
 export const RESERVED_NAMES = [
-    "petik", "angka", "logis", "mesin", "baris", "datum", "benar", "salah",
+    "petik", "angka", "logis", "mesin", "baris",
 ]
 
 export const petikSymbol = Symbol("petik"),
@@ -26,6 +26,7 @@ export class Variable extends Value {
     constructor(type, tetap, data) {
         super(type, data);
         this.tetap = tetap;
+        this.isDatum = false;
     }
 }
 
@@ -222,9 +223,7 @@ class BarisTipe extends Stipe {
 
     init () {
         this.operators.define("PLUS", 
-            makeBuiltInFunc([barisSymbol, barisSymbol], barisSymbol, (v, [r,l]) => l.data.length >= 1 && r.data.length >= 1 && l.data[0].type !== r.data[0].type 
-                ? v.error(`Elemen-elemen dalam baris harus mempunyai tipe yang sama. ${l.data[0].type.description} != ${r.data[0].type.description}`) 
-                : new Value(barisSymbol, Array(...l.data, ...r.data))));
+            makeBuiltInFunc([barisSymbol, barisSymbol], barisSymbol, (v, [r,l]) => new Value(barisSymbol, Array(...l.data, ...r.data))));
 
         this.operators.define("MINUS_UNARY",
             makeBuiltInFunc([barisSymbol], barisSymbol, (v, [r]) => {
@@ -266,7 +265,9 @@ class BarisTipe extends Stipe {
             if (b.data.length <= i.data) {
                 v.error(`Indeks tidak boleh lebih besar atau sama dengan ukuran baris, ${i.data} >= ${b.data.length}`);
             }
-            return new Value(barisSymbol, b.data.filter((val, idx)=>idx!==i.data).map((val)=>copier(val)));
+
+            while (i.data < 0) i.data += b.data.length;
+            return new Value(barisSymbol, b.data.filter((val, idx)=>idx!==i.data));
         }));
     }
 }
@@ -296,13 +297,16 @@ export class Model extends Stipe {
                     let type = params[i][0];
                     let symbol = type.accept(v);
                     let name = params[i][1].lexeme;
+                    
+                    let val = new Variable(symbol, type.tetap, args[i].data);
                     if (args[i].data === null) {
-                        
+                        // okay?
+                    } else if (symbol === null) {
+                        val.isDatum = true;
                     } else if (symbol !== args[i].type) {
                         v.line = callLineNum;
                         v.error(`Tipe member tidak sama dengan argumen. ${symbol.description} != ${args[i].type.description}`);
                     }
-                    let val = new Variable(symbol, type.tetap, args[i].data);
                     val.member = args[i].member;
                     obj.member.define(name, val);
                 }
@@ -394,6 +398,7 @@ function makeBuiltInFunc(parameters, returnType, funcBody) {
             v.error("Jumlah Argumen tidak sama dengan parameter:" + ` Seharusnya ${parameters.length} dan bukan ${args.length}.`);
         } 
         for (let i = 0; i < args.length; i++) {
+            if (parameters[i] === null) continue;
             if (args[i].type !== parameters[i]) {
                 v.error("Tipe argumen tidak sama dengan tipe parameter." + ` Seharusnya ${parameters[i].type.description} dan bukan ${args[i].description}`);
             }
@@ -447,15 +452,16 @@ export const GLOBAL_ENV = (() => {
                 .map((val, idx)=>new Value(angkaSymbol, from.data+idx))))
     );
 
-    env.define("nihil?", new Variable(mesinSymbol, true, {callFunc: (v, [d]) => new Value(logisSymbol, d.data === null)}));
-    env.define("ukuran", new Variable(mesinSymbol, true, {callFunc: (v, [d]) => d.type === barisSymbol || d.type === petikSymbol 
+    env.define("nihil?", makeBuiltInFunc([null], logisSymbol, (v, [d]) => new Value(logisSymbol, d.data === null)));
+    env.define("ukuran", makeBuiltInFunc([null], angkaSymbol,(v, [d]) => d.type === barisSymbol || d.type === petikSymbol 
         ? new Value(angkaSymbol, d.data.length)
         : v.error(`Ukuran hanya terdapat untuk tipe petik atau baris. Menemukan tipe ${d.type.description}.`)
-    }));
+    ));
 
-    env.define("salin", new Variable(mesinSymbol, true, {callFunc: (v, [d]) => {
-        return copier(d);
-    }}));
-
+    env.define("salin", makeBuiltInFunc([null], null, (v, [d]) => copier(d)));
+    env.define("tipe", makeBuiltInFunc([null], petikSymbol, (v, [d]) => (d.type?.description) 
+        ? new Value(petikSymbol, d.type.description)
+        : new Value(petikSymbol, "datum")
+    ));
     return env;
 })();
