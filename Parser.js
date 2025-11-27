@@ -5,6 +5,10 @@ import { SimplErrorStruktur } from "./SimplError.js";
 
 export class Parser {
     constructor() {
+        this.init();
+    }
+
+    init() {
         this.tokens = [];
         this.tokenIndex = 0;
         this.tree = null;
@@ -453,6 +457,7 @@ export class Parser {
     }
 
     parse(tokens) {
+        this.init();
         this.tokens = tokens;
         let treeList = [];
         while(!this.match(TokenType.EOF)) {

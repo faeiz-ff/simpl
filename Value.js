@@ -303,6 +303,7 @@ export class Model extends Stipe {
                         // okay?
                     } else if (symbol === null) {
                         val.isDatum = true;
+                        val.type = args[i].type;
                     } else if (symbol !== args[i].type) {
                         v.line = callLineNum;
                         v.error(`Tipe member tidak sama dengan argumen. ${symbol.description} != ${args[i].type.description}`);
@@ -312,7 +313,6 @@ export class Model extends Stipe {
                 }
 
                 obj.member.define("objek", obj);
-
                 return obj;
             }
         });
@@ -360,14 +360,17 @@ export class Callable {
         visitor.environment = funcEnv;
         for(let i = 0; i < args.length; i++) {
             let [type, tetap, name] = this.parameters[i];
+            let val = new Variable(type, tetap, args[i].data);
 
-            if (args[i].data === null) {
+            if (type === null) {
+                val.isDatum = true;
+                val.type = args[i].type;
+            } else if (args[i].data === null) {
 
             } else if (args[i].type !== type) {
                 visitor.line = callLineNum;
                 visitor.error(`Tipe argumen tidak sama dengan parameter. ${args[i].type} != ${type.description}`);
             }
-            let val = new Variable(type, tetap, args[i].data);
             val.member = args[i].member;
             funcEnv.define(name, val);
         }

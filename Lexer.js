@@ -4,6 +4,10 @@ import { SimplErrorTulisan } from "./SimplError.js";
 
 export class Lexer {
     constructor() {
+        this.init();
+    }
+
+    init() {
         this.text = null;
         this.charStart = 0;
         this.charIndex = 0;
@@ -54,6 +58,7 @@ export class Lexer {
     }
 
     scanTokens(text) {
+        this.init();
         this.text = text;
         let tokens = [];
 

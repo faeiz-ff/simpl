@@ -21,13 +21,9 @@ const location = {
 export class Interpreter {
     constructor() {
         this.globalEnvironment = Value.GLOBAL_ENV;
-        this.init();
-    }
-
-    init() {
-        this.tree = null;
         this.line = 0;
         this.environment = new Environment(this.globalEnvironment);
+        this.tree = null;
         this.state = location.GLOBAL;
         this.stack = [];
         this.output = [];
@@ -54,7 +50,7 @@ export class Interpreter {
         let value = new Value.Value(Value.barisSymbol, []);
 
         for (let expr of arrayExpr.contents) {
-            let v = expr.accept(this);
+            let v = this.validvalue(expr.accept(this));
             // value.data.push(v);
             let result = new Value.Value(v.type, v.data);
             result.member = v.member;
@@ -71,7 +67,7 @@ export class Interpreter {
             iterable = new Value.Value(Value.barisSymbol, iterable.data.split("").map(str=>new Value.Value(Value.petikSymbol, str)));
         }
         if (iterable.type !== Value.barisSymbol) {
-            this.error(`${iterable.type.description} bukan baris/petik, tidak bisa di-indeks`);
+            this.error(`'${iterable.type.description}' bukan baris/petik, tidak bisa di-indeks`);
         }
 
         let index = indexExpr.index.accept(this);
@@ -108,22 +104,22 @@ export class Interpreter {
         let callable = callExpr.callable.accept(this);
 
         if (callable.type !== Value.mesinSymbol && callable.type !== Value.stipeSymbol) {
-            this.error(`Hanya bisa 'memanggil' mesin atau model, malah menemukan '${callable.type.description}' `)
+            this.error(`Hanya bisa 'memanggil' mesin atau model, malah menemukan ${callable.type.description}. `)
         }
 
         if (!callable.data?.callFunc) {
             this.error(`Mesin tidak terdefinisi, tidak bisa dipanggil.`);
         }
         this.line = this.stack[this.stack.length-1];
-        let result = callable.data.callFunc(this, callExpr.args.map(val=>val.accept(this)));
+        let result = callable.data.callFunc(this, callExpr.args.map(val=>this.validvalue(val.accept(this))));
         this.stack.pop();
         if (this.stack.length == 0) this.state = location.GLOBAL;
         return result;
     }
 
     visitBinaryExpr(binaryExpr) {
-        let leftValue = binaryExpr.left.accept(this);
-        let rightValue = binaryExpr.right.accept(this);
+        let leftValue = this.validvalue(binaryExpr.left.accept(this));
+        let rightValue = this.validvalue(binaryExpr.right.accept(this));
 
         this.line = binaryExpr.op.line;
 
@@ -140,7 +136,7 @@ export class Interpreter {
     }
 
     visitUnaryExpr(unaryExpr) {
-        let rightValue = unaryExpr.right.accept(this);
+        let rightValue = this.validvalue(unaryExpr.right.accept(this));
 
         this.line = unaryExpr.op.line;
 
@@ -162,7 +158,7 @@ export class Interpreter {
     visitIdentifierExpr(identifierExpr) {
         let value =  this.environment.get(identifierExpr.token.lexeme);
         this.line = identifierExpr.token.line;
-        if (!value) this.error(`${identifierExpr.token.lexeme} tidak dapat ditemukan.`);
+        if (!value) this.error(`'${identifierExpr.token.lexeme}' tidak dapat ditemukan.`);
         return value;
     }
 
@@ -171,9 +167,9 @@ export class Interpreter {
         let name = memberExpr.member.token.lexeme;
         this.line = memberExpr.member.token.line;
         if (!main.member) {
-            this.error(`Nilai tidak mempunyai atribut .${name}.`);
+            this.error(`Nilai tidak mempunyai atribut sama sekali.`);
         } else if (!main.member.has(name)) {
-            this.error(`atribut .${name} tidak dapat ditemukan.`)
+            this.error(`atribut .${name} tidak dapat ditemukan.`);
         }
         return main.member.get(name);
     }
@@ -184,7 +180,7 @@ export class Interpreter {
     visitTypeStmt(typeStmt) {
         if (typeStmt.type === null) return null;
         let type =  typeStmt.type.accept(this);
-        if (type.type !== Value.stipeSymbol) this.error(`${type.type.description} bukan sebuah Model/Tipe Valid.`);
+        if (type.type !== Value.stipeSymbol) this.error(`'${type.type.description}' bukan sebuah Model/Tipe Valid.`);
         return type.symbol;
     }
 
@@ -231,11 +227,9 @@ export class Interpreter {
 
         let variable = new Value.Variable(type, datumStmt.type.tetap);
 
-        let value = datumStmt.expr.accept(this);
+        let value = this.validvalue(datumStmt.expr.accept(this));
 
         if (value.data === null) value.type = variable.type; // if nihil, ok
-        else if (value.type === Value.stipeSymbol) 
-            this.error("stipe tidak dapat menjadi nilai.");
 
         if (type === null) {
             variable.isDatum = true;
@@ -253,7 +247,7 @@ export class Interpreter {
         if (variable.tetap) {
             this.error(`Variabel tetap tidak dapat di-rubah.`);
         }
-        let value = rubahStmt.value.accept(this);
+        let value = this.validvalue(rubahStmt.value.accept(this));
         if (value.data === null) value.type = variable.type; // if nihil, ok
 
         if (variable.isDatum)
@@ -405,10 +399,10 @@ export class Interpreter {
         let variable = this.environment.get(name);
         if (variable) {
             if (variable.type !== Value.stipeSymbol) {
-                this.error(`Modul hanya bisa _ditambahkan_ pada tipe. ${name} bukan merupakan tipe.`);
+                this.error(`Modul hanya bisa _ditambahkan_ pada tipe. '${name}' bukan merupakan tipe.`);
             }
             if (variable.member) {
-                this.error(`Tipe ${name} sudah memiliki modul sendiri, tidak bisa definisi ulang.`);
+                this.error(`Tipe '${name}' sudah memiliki modul sendiri, tidak bisa definisi ulang.`);
             }
         }
 
@@ -445,12 +439,18 @@ export class Interpreter {
         return false;
     }
 
+    validvalue(v) {
+        if (v.type !== Value.stipeSymbol) return v;
+        this.error("stipe tidak dapat menjadi nilai.");
+    }
+
     error(message) {
         throw new SimplErrorEksekusi(`Error Eksekusi [Pada baris ke-${this.line}] ${message}`);
     }
 
     interpret(tree) {
-        this.init();
+        this.line = 0;
+        this.output = [];
         this.tree = tree;
         tree.accept(this);
         return this.output;
