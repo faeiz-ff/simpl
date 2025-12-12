@@ -4,7 +4,7 @@ import { Henti, Lewat, Hasil } from "./Interpreter.js";
 import * as TokenType from "./TokenType.js";
 
 export const RESERVED_NAMES = [
-    "petik", "angka", "logis", "mesin", "baris",
+    "petik", "angka", "logis", "mesin", "baris", "stipe", "modul"
 ]
 
 export const petikSymbol = Symbol("petik"),
@@ -115,6 +115,12 @@ class PetikTipe extends Stipe {
         this.member.define("pisah", makeBuiltInFunc([petikSymbol, petikSymbol], barisSymbol, (v, [d, sep])=>{
             return new Value(barisSymbol, d.data.split(sep.data).map(val=>new Value(petikSymbol, val)));
         }));
+        this.member.define("bersih", makeBuiltInFunc([petikSymbol], petikSymbol, (v, [d])=> {
+            return new Value(petikSymbol, d.data.trim())
+        }));
+        this.member.define("ganti", makeBuiltInFunc([petikSymbol, petikSymbol, petikSymbol], petikSymbol,
+            (v, [d, what, rep]) => new Value(petikSymbol, d.data.replaceAll(what.data, rep.data))
+        ));
     }
 }
 
@@ -419,8 +425,8 @@ function copier(thing) {
         case logisSymbol: return new Value(logisSymbol, thing.data);
         case mesinSymbol: return new Value(mesinSymbol, thing.data);
         case barisSymbol: return new Value(barisSymbol, thing.data.map((val)=>copier(val)));
-        case stipeSymbol: v.error("Tidak dapat menyalin tipe.");
-        case modulSymbol: v.error("Tidak dapat menyalin modul.");
+        case stipeSymbol: return null;
+        case modulSymbol: return null;
         default:
             if (thing.member && thing.member instanceof Environment) {
                 let keys = thing.member.memory.keys();

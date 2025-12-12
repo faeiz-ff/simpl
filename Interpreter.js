@@ -16,6 +16,8 @@ const location = {
     UNTUK: 3,
     MESIN: 4,
 }
+const MAX_LOOP_ALLOWED = 100000;
+const MAX_STACK_SIZE = 500;
 
 // Implements all Expressions and Statements Visitor
 export class Interpreter {
@@ -100,6 +102,8 @@ export class Interpreter {
 
     visitCallExpr(callExpr) {
         this.stack.push(this.line);
+        if (this.stack.length > MAX_STACK_SIZE) 
+            this.error(`Rekursi melebihi batas: Lebih dari ${MAX_STACK_SIZE}`);
         this.state = location.MESIN;
         let callable = callExpr.callable.accept(this);
 
@@ -199,7 +203,7 @@ export class Interpreter {
             } else if (thing.type === Value.angkaSymbol) {
                 return thing.data.toString();
             } else if (thing.type === Value.petikSymbol) {
-                return thing.data;
+                return '"' + thing.data + '"';
             } else {
                 if (!thing?.type) return `nihil`;
                 return `${thing.type.description}<>`;
@@ -216,14 +220,8 @@ export class Interpreter {
 
     visitDatumStmt(datumStmt) {
         let type = datumStmt.type.accept(this);
-        let name = datumStmt.name.lexeme;
+        let name = this.validName(datumStmt.name.lexeme);
         this.line = datumStmt.name.line;
-
-        if (this.environment.has(name)) {
-            this.error(`Variabel dengan nama '${name}' sudah ada. Tidak bisa didefinisi ulang.`);
-        } else if (Value.RESERVED_NAMES.some(v=>v===name)) {
-            this.error(`Nama sistem (${name}) tidak boleh didefinisi ulang.`);
-        }
 
         let variable = new Value.Variable(type, datumStmt.type.tetap);
 
@@ -308,7 +306,11 @@ export class Interpreter {
     visitSlagiStmt(slagiStmt) {
         const checkTruthy = (v) => v.data || v.member;
         let lastEnv = this.environment;
+        let howManyLoop = 0;
         while (checkTruthy(slagiStmt.condition.accept(this))) {
+            howManyLoop++;
+            if (howManyLoop > MAX_LOOP_ALLOWED) 
+                this.error(`Pengulangan melebihi batas: lebih dari ${MAX_LOOP_ALLOWED}.`);
             this.environment = new Environment(lastEnv);
             try {
                 for (let stmt of slagiStmt.block.statements) {
@@ -330,7 +332,7 @@ export class Interpreter {
     }
 
     visitUntukStmt(untukStmt) {
-        let name = untukStmt.varName.lexeme;
+        let name = this.validName(untukStmt.varName.lexeme);
         let type = untukStmt.varType.accept(this);
         
         let iter = untukStmt.iterable.accept(this);
@@ -343,7 +345,7 @@ export class Interpreter {
 
         for (let idx = 0; idx < iter.data.length; idx++) {
             let i = iter.data[idx];
-            let val = new Value.Variable(i.type, untukStmt.type?.tetap ? untukStmt.type.tetap : false, i.data);
+            let val = new Value.Variable(i.type, untukStmt.type?.tetap ? true : false, i.data);
             if (type === null) {
                 val.isDatum = true;
             } else if (i.type !== type) this.error(`Tipe data tidak sama pada indeks ke-${idx}: ${i.type.description} != ${type.description}.`);
@@ -377,7 +379,8 @@ export class Interpreter {
     }
 
     visitJenisStmt(jenisStmt) {
-        let name = jenisStmt.name.lexeme;
+        let name = this.validName(jenisStmt.name.lexeme);
+        this.line = jenisStmt.name.line;
         this.environment.define(name, new Value.Jenis(name, jenisStmt.enums));
     }
 
@@ -388,13 +391,16 @@ export class Interpreter {
     }
 
     visitModelStmt(modelStmt) {
-        let name = modelStmt.name.lexeme;
-        this.line = modelStmt.name.token;
+        let name = this.validName(modelStmt.name.lexeme);
+        this.line = modelStmt.name.line;
         this.environment.define(name, new Value.Model(name, modelStmt.contents));
     }
 
     visitModulStmt(modulStmt) {
-        let name = modulStmt.name.lexeme;
+        let name = modulStmt.name.lexeme; //Special Case: Modul _can_ be the same as a Model name.
+        if (Value.RESERVED_NAMES.some(v=>v===name)) { // So we only check for this
+            this.error(`Nama sistem (${name}) tidak boleh didefinisi ulang.`);
+        }
         this.line = modulStmt.name.line;
         let variable = this.environment.get(name);
         if (variable) {
@@ -442,6 +448,15 @@ export class Interpreter {
     validvalue(v) {
         if (v.type !== Value.stipeSymbol) return v;
         this.error("stipe tidak dapat menjadi nilai.");
+    }
+
+    validName(n) {
+        if (Value.RESERVED_NAMES.some(v=>v===n)) {
+            this.error(`Nama sistem (${n}) tidak boleh didefinisi ulang.`);
+        } else if (this.environment.has(n)) {
+            this.error(`Variabel dengan nama '${n}' sudah ada. Tidak bisa didefinisi ulang.`);
+        }
+        return n;
     }
 
     error(message) {
