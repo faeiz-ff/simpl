@@ -1,6 +1,6 @@
-import * as TokenType from "./TokenType.js";
-import { Token } from "./Token.js";
-import { SimplErrorTulisan } from "./SimplError.js";
+import * as TokenType from "./token-type.js";
+import { Token } from "./token.js";
+import { SimplErrorTulisan } from "./simpl-error.js";
 
 export class Lexer {
     constructor() {

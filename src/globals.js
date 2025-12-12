@@ -1,7 +1,7 @@
 
-import { Environment } from "./Environment.js";
-import { Henti, Lewat, Hasil } from "./Interpreter.js";
-import * as TokenType from "./TokenType.js";
+import { Environment } from "./environment.js";
+import { Henti, Lewat, Hasil } from "./interpreter.js";
+import * as TokenType from "./token-type.js";
 
 export const RESERVED_NAMES = [
     "petik", "angka", "logis", "mesin", "baris", "stipe", "modul"

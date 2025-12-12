@@ -1,6 +1,6 @@
-import { SimplErrorEksekusi } from "./SimplError.js";
-import { Environment } from "./Environment.js";
-import * as Value from "./Value.js";
+import { SimplErrorEksekusi } from "./simpl-error.js";
+import { Environment } from "./environment.js";
+import * as Value from "./globals.js";
 
 export class Henti {}
 export class Lewat {}

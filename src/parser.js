@@ -1,7 +1,7 @@
-import * as TokenType from "./TokenType.js";
-import * as Expr from "./Expr.js";
-import * as Stmt from "./Stmt.js";
-import { SimplErrorStruktur } from "./SimplError.js"; 
+import * as TokenType from "./token-type.js";
+import * as Expr from "./expr.js";
+import * as Stmt from "./stmt.js";
+import { SimplErrorStruktur } from "./simpl-error.js"; 
 
 export class Parser {
     constructor() {
