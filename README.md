@@ -1,11 +1,11 @@
 
 
-# SIMPL: Indonesian Mini Programming Language
+# `simpl`: Indonesian Mini Programming Language
 `simpl` adalah bahasa pemrograman mini yang berbasis dari bahasa Indonesia. Bahasa ini dirancang untuk memudahkan penerjemahan berbagai konsep pemrograman ke dalam bahasa Indonesia. Selain itu, semua kata kunci (_keywords_) dari bahasa ini memiliki jumlah karakter persis 5 huruf untuk alasan estetika :)
 
-SIMPL adalah akronim rekursif dari SIMPL: Indonesian Mini Programming Language :D
+`simpl` adalah akronim rekursif dari `simpl`: Indonesian Mini Programming Language
 
-## Fitur 
+## Fitur  `simpl`
 `simpl` **masih dalam tahap pengembangan!** Jadi, semua yang tertera disini akan berubah sewaktu-waktu!
 
 Berikut fitur yang _sekarang_ sudah diimplementasikan:
@@ -13,7 +13,7 @@ Berikut fitur yang _sekarang_ sudah diimplementasikan:
 - Pengecekan Tipe yang kuat (saat _runtime_)
 - Mendukung fitur pemrograman fungsional (_first-class_, _closure_)
 - Mendukung pembuatan Tipe melalui `model` (_struct_) dan `jenis` (_enum_)
-- **Semua** kata kunci berjumlah 5 huruf dan dalam bahasa Indonesia
+- **Semua** kata kunci berjumlah 5 huruf dan dalam bahasa Indonesia 
 
 Fitur yang akan datang:
 - Website untuk menjalankan `simpl`
@@ -26,43 +26,29 @@ Fitur yang akan datang:
 - bytecode...
 - dan fitur lainnya yang tidak terpikirkan sekarang :)
 
-## Contoh Minimal
-Tur bahasa yang lengkap ada dalam [Tur Sintaksis](docs/tur)
-### Kapabilitas pemrograman sederhana
-- Kalimat ikonik
-```simpl
-cetak "Halo, dunia!"
-```
-
-- `mesin` pencetak uang
-```simpl
-mesin pencetakUang ==> () {
-	cetak "uang"
-}
-```
+## Contoh `simpl`
+Tur lebih lengkap ada dalam [Tur Sintaks Simpl](docs/tur)
 - `mesin` akar dua
 ```simpl
 mesin akar2 ==> (angka n) {
-	angka TOLERANSI = 0.0000000000000000001
-	mesin abs ==> (angka a) {
-		kalau a < 0 { hasil -a }
-		hasil a
-	}
-	mesin rata2 ==> (angka a, angka b) { hasil (a+b)/2 }
+    angka tetap TOLERANSI = 0.0000000000000000001
+    mesin abs ==> (angka a) {
+        kalau a < 0 { hasil -a }
+        hasil a
+    }
+    mesin rata2 ==> (angka a, angka b) { hasil (a+b)/2 }
 	
-	# menebak dengan metode newton
-	angka tebakan = 0
-	angka selanjutnya = 1
-	slagi abs(tebakan - selanjutnya) > TOLERANSI {
-		rubah tebakan = selanjutnya
-		rubah selanjutnya = rata2(tebakan, n/tebakan)
-	}
-	hasil tebakan
+    # menebak dengan metode newton
+    angka tebakan = 0
+    angka selanjutnya = 1
+    slagi abs(tebakan - selanjutnya) > TOLERANSI {
+        rubah tebakan = selanjutnya
+        rubah selanjutnya = rata2(tebakan, n/tebakan)
+    }
+    hasil tebakan
 }
 ```
-
-### Kapabitilas pemrograman fungsional
-`simpl` mendukung `mesin` (yaitu fungsi) sebagai tipe data yang bisa dimanipulasikan seperti data lainnya
+- demonstrasi fungsional
 ```simpl
 mesin map ==> (mesin f, baris masukan) {
 	baris keluaran = []
@@ -86,8 +72,7 @@ cetak map(ganda(kuadrat), contoh)
 # [ 1, 16, 81, 256, 625 ]
  
 ```
-### Kapabilitas permodelan data
-`simpl` mendukung  pemodelan Tipe data lebih kompleks dengan `model`
+- demonstrasi pemodelan
 ```simpl
 model Pengguna (
 	petik nama,
@@ -96,31 +81,31 @@ model Pengguna (
 )
 
 modul Pengguna {
-	jenis Status ( online, offline, rahasia )
-	angka jumlahPengguna = 0
-	mesin baru ==> (petik nama) {
-		Pengguna akunBaru = Pengguna(
-			nama, 
-			jumlahPengguna, 
-			Status.online
-		)
-		rubah jumlahPengguna = jumlahPengguna + 1
-		hasil akunBaru
-	}
-	mesin kePetik ==> (Pengguna p) {
-		petik status = ""
-		kalau p.status == Status.online { 
-			rubah status = "online" 
-		} namun kalau p.status == Status.offline {
-			rubah status = "offline" 
-		} namun { 
-			rubah status = "rahasia" 
-		}
-		hasil
-			"{ nama: " + p.nama +
-			", id: " + petik(p.id) +
-			", status: " + status + " }"
-	}
+    jenis Status ( online, offline, rahasia )
+    angka jumlahPengguna = 0
+    mesin baru ==> (petik nama) {
+        Pengguna akunBaru = Pengguna(
+            nama, 
+            jumlahPengguna, 
+            Status.online
+        )
+        rubah jumlahPengguna = jumlahPengguna + 1
+        hasil akunBaru
+    }
+    mesin kePetik ==> (Pengguna p) {
+        petik status = ""
+        kalau p.status == Status.online { 
+            rubah status = "online" 
+        } namun kalau p.status == Status.offline {
+            rubah status = "offline" 
+        } namun { 
+            rubah status = "rahasia" 
+        }
+        hasil
+            "{ nama: " + p.nama +
+            ", id: " + petik(p.id) +
+            ", status: " + status + " }"
+    }
 }
 
 Pengguna admin = Pengguna.baru("zie")
@@ -133,3 +118,10 @@ cetak Pengguna.kePetik(lain)
 # "{ nama: Hengker Anongnimus, id: 1, status: online }"
 ```
 
+
+## Sumber Referensi
+`simpl` ada berkat tutorial yang sangat mengagumkan ini. _Check them out!_
+- [https://ruslanspivak.com/lsbasi-part1/](https://ruslanspivak.com/lsbasi-part1/)
+- [https://craftinginterpreters.com/](https://craftinginterpreters.com/)
+
+(No AI was used while making this, the proof is apparent in the spaghetti codebase)
