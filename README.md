@@ -27,7 +27,7 @@ Fitur yang akan datang:
 - dan fitur lainnya yang tidak terpikirkan sekarang :)
 
 ## Contoh `simpl`
-Tur lebih lengkap ada dalam [Tur Sintaks Simpl](docs/tur)
+Tur lebih lengkap ada dalam [Tur Sintaks Simpl](docs/tur.md)
 - `mesin` akar dua
 ```simpl
 mesin akar2 ==> (angka n) {
