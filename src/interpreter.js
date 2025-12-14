@@ -265,10 +265,7 @@ export class Interpreter {
             }
         } catch (err) {
             this.environment = blockEnv.enclosing; // close the environment first
-            if (err instanceof Lewat || err instanceof Henti) {
-                return;
-            }
-            throw err; // rethrows to the nearest Slagi/Untuk statement
+            throw err;
         }
         this.environment = blockEnv.enclosing;
     }
@@ -332,7 +329,7 @@ export class Interpreter {
     }
 
     visitUntukStmt(untukStmt) {
-        let name = this.validName(untukStmt.varName.lexeme);
+        let name = this.validName(untukStmt.varName.lexeme, false);
         let type = untukStmt.varType.accept(this);
         
         let iter = untukStmt.iterable.accept(this);
@@ -397,10 +394,7 @@ export class Interpreter {
     }
 
     visitModulStmt(modulStmt) {
-        let name = modulStmt.name.lexeme; //Special Case: Modul _can_ be the same as a Model name.
-        if (Value.RESERVED_NAMES.some(v=>v===name)) { // So we only check for this
-            this.error(`Nama sistem (${name}) tidak boleh didefinisi ulang.`);
-        }
+        let name = this.validName(modulStmt.name.lexeme, false);
         this.line = modulStmt.name.line;
         let variable = this.environment.get(name);
         if (variable) {
@@ -450,10 +444,10 @@ export class Interpreter {
         this.error("stipe tidak dapat menjadi nilai.");
     }
 
-    validName(n) {
+    validName(n, checkExisted = true) {
         if (Value.RESERVED_NAMES.some(v=>v===n)) {
             this.error(`Nama sistem (${n}) tidak boleh didefinisi ulang.`);
-        } else if (this.environment.has(n)) {
+        } else if (checkExisted && this.environment.has(n)) {
             this.error(`Variabel dengan nama '${n}' sudah ada. Tidak bisa didefinisi ulang.`);
         }
         return n;

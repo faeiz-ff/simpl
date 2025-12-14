@@ -329,6 +329,7 @@ export class Jenis extends Stipe {
     constructor(name, enums) {
         let sym = Symbol(name);
         super(sym, null);
+        this.member = new Environment();
         enums.forEach(thing => {
             this.member.define(thing.lexeme, new Value(sym, Symbol(thing.lexeme)));
         });
@@ -425,8 +426,8 @@ function copier(thing) {
         case logisSymbol: return new Value(logisSymbol, thing.data);
         case mesinSymbol: return new Value(mesinSymbol, thing.data);
         case barisSymbol: return new Value(barisSymbol, thing.data.map((val)=>copier(val)));
-        case stipeSymbol: return null;
-        case modulSymbol: return null;
+        case stipeSymbol: return new Value(null, null);
+        case modulSymbol: return new Value(null, null);
         default:
             if (thing.member && thing.member instanceof Environment) {
                 let keys = thing.member.memory.keys();
@@ -456,9 +457,9 @@ export const GLOBAL_ENV = (() => {
 
     env.define("jarak", makeBuiltInFunc([angkaSymbol, angkaSymbol], barisSymbol, 
         (v, [from, to])=>new Value(barisSymbol, 
-            Array(to.data-from.data)
+            Array(Math.abs(Math.floor(to.data-from.data)))
                 .fill(0)
-                .map((val, idx)=>new Value(angkaSymbol, from.data+idx))))
+                .map((val, idx)=>new Value(angkaSymbol, from.data+((to.data>from.data)?1:-1)*idx))))
     );
 
     env.define("nihil?", makeBuiltInFunc([null], logisSymbol, (v, [d]) => new Value(logisSymbol, d.data === null)));

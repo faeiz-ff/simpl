@@ -22,8 +22,6 @@ class Simpl {
         } catch (err) {
             if (err instanceof SimplError) {
                 return err.message;
-            } else if (err instanceof RangeError) {
-                return `[Pada baris ke-${this.interpreter.line}] batas limit rekursi tercapai. Ini adalah batasan bahasa, saya minta maaf atas ketidaknyamanannya. :(`
             } else {
                 return `[Pada baris ke-${this.interpreter.line}] Uh Oh, ini error sistem. Mohon laporkan agar diperbaiki. [ ${err} ]`;
             }
