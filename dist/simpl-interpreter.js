@@ -477,6 +477,7 @@ var Simpl = (function () {
         constructor(name, enums) {
             let sym = Symbol(name);
             super(sym, null);
+            this.member = new Environment();
             enums.forEach(thing => {
                 this.member.define(thing.lexeme, new Value(sym, Symbol(thing.lexeme)));
             });
@@ -571,8 +572,8 @@ var Simpl = (function () {
             case logisSymbol: return new Value(logisSymbol, thing.data);
             case mesinSymbol: return new Value(mesinSymbol, thing.data);
             case barisSymbol: return new Value(barisSymbol, thing.data.map((val)=>copier(val)));
-            case stipeSymbol: return null;
-            case modulSymbol: return null;
+            case stipeSymbol: return new Value(null, null);
+            case modulSymbol: return new Value(null, null);
             default:
                 if (thing.member && thing.member instanceof Environment) {
                     let keys = thing.member.memory.keys();
@@ -602,9 +603,9 @@ var Simpl = (function () {
 
         env.define("jarak", makeBuiltInFunc([angkaSymbol, angkaSymbol], barisSymbol, 
             (v, [from, to])=>new Value(barisSymbol, 
-                Array(to.data-from.data)
+                Array(Math.abs(Math.floor(to.data-from.data)))
                     .fill(0)
-                    .map((val, idx)=>new Value(angkaSymbol, from.data+idx))))
+                    .map((val, idx)=>new Value(angkaSymbol, from.data+((to.data>from.data)?1:-1)*idx))))
         );
 
         env.define("nihil?", makeBuiltInFunc([null], logisSymbol, (v, [d]) => new Value(logisSymbol, d.data === null)));
@@ -884,10 +885,7 @@ var Simpl = (function () {
                 }
             } catch (err) {
                 this.environment = blockEnv.enclosing; // close the environment first
-                if (err instanceof Lewat$1 || err instanceof Henti$1) {
-                    return;
-                }
-                throw err; // rethrows to the nearest Slagi/Untuk statement
+                throw err;
             }
             this.environment = blockEnv.enclosing;
         }
@@ -951,7 +949,7 @@ var Simpl = (function () {
         }
 
         visitUntukStmt(untukStmt) {
-            let name = this.validName(untukStmt.varName.lexeme);
+            let name = this.validName(untukStmt.varName.lexeme, false);
             let type = untukStmt.varType.accept(this);
             
             let iter = untukStmt.iterable.accept(this);
@@ -1016,10 +1014,7 @@ var Simpl = (function () {
         }
 
         visitModulStmt(modulStmt) {
-            let name = modulStmt.name.lexeme; //Special Case: Modul _can_ be the same as a Model name.
-            if (RESERVED_NAMES.some(v=>v===name)) { // So we only check for this
-                this.error(`Nama sistem (${name}) tidak boleh didefinisi ulang.`);
-            }
+            let name = this.validName(modulStmt.name.lexeme, false);
             this.line = modulStmt.name.line;
             let variable = this.environment.get(name);
             if (variable) {
@@ -1069,10 +1064,10 @@ var Simpl = (function () {
             this.error("stipe tidak dapat menjadi nilai.");
         }
 
-        validName(n) {
+        validName(n, checkExisted = true) {
             if (RESERVED_NAMES.some(v=>v===n)) {
                 this.error(`Nama sistem (${n}) tidak boleh didefinisi ulang.`);
-            } else if (this.environment.has(n)) {
+            } else if (checkExisted && this.environment.has(n)) {
                 this.error(`Variabel dengan nama '${n}' sudah ada. Tidak bisa didefinisi ulang.`);
             }
             return n;
@@ -2137,8 +2132,6 @@ var Simpl = (function () {
             } catch (err) {
                 if (err instanceof SimplError) {
                     return err.message;
-                } else if (err instanceof RangeError) {
-                    return `[Pada baris ke-${this.interpreter.line}] batas limit rekursi tercapai. Ini adalah batasan bahasa, saya minta maaf atas ketidaknyamanannya. :(`
                 } else {
                     return `[Pada baris ke-${this.interpreter.line}] Uh Oh, ini error sistem. Mohon laporkan agar diperbaiki. [ ${err} ]`;
                 }
