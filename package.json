@@ -2,7 +2,7 @@
   "name": "simpl",
   "version": "1.0.0",
   "description": "Simpl: Indonesian Mini Programming Language interpreter",
-  "main": "index.js",
+  "main": "./dist/simpl-interpreter.js",
   "scripts": {
     "build": "rollup -c"
   },
@@ -11,8 +11,8 @@
     "url": "git+https://github.com/faeiz-ff/simpl.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "faeiz-ff",
+  "license": "MIT",
   "type": "module",
   "bugs": {
     "url": "https://github.com/faeiz-ff/simpl/issues"
