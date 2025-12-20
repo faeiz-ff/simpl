@@ -27,6 +27,7 @@ export class Lexer {
     }
 
     see() {
+        if (this.isAtEnd()) return "EOF"
         return this.text[this.charIndex];
     }
 
@@ -118,6 +119,7 @@ export class Lexer {
     string() {
         this.advance();
         while(!this.isAtEnd() && this.see() !== '"') this.advance();
+        if (this.isAtEnd()) this.error("Petik tidak tertutup.");
         this.advance();
         let lexeme = this.parseLexeme();
         return new Token(TokenType.LITERAL, lexeme, lexeme.slice(1, lexeme.length-1), this.lineIndex);
@@ -200,7 +202,11 @@ export class Lexer {
         }
         if (this.isAtEnd()) return;
 
-        throw new SimplErrorTulisan(`Error Tulisan [Pada Baris ke-${this.lineIndex}] karakter tidak valid: Menemukan '${this.see()}'.`);
+        this.error(`karakter tidak valid: Menemukan '${this.see()}'.`);
+    }
+
+    error(errmsg) {
+        throw new SimplErrorTulisan(`Error Tulisan => ` + errmsg, this.see().line);
     }
 
     debugPrintTokens(tokens) {

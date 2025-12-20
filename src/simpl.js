@@ -14,6 +14,7 @@ class Simpl {
 
     runCode(text) {
         // console.log(text.split("\n").reduce((codeStr, line, idx) => codeStr + `${idx + 1}.\t${line}\n`, ''));
+        const textLines = text.split("\n");
         try {
             let tokens = this.lexer.scanTokens(text);
             let pohon = this.parser.parse(tokens);
@@ -21,7 +22,8 @@ class Simpl {
             return output.join("\n");
         } catch (err) {
             if (err instanceof SimplError) {
-                return err.message;
+                const errorText = textLines[err.line-1];
+                return (errorText ? `ERROR! Pada baris ke-${err.line}\n>> ` + errorText + '\n': "") + err.message;
             } else {
                 return `[Pada baris ke-${this.interpreter.line}] Uh Oh, ini error sistem. Mohon laporkan agar diperbaiki. [ ${err} ]`;
             }

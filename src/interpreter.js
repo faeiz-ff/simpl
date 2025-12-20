@@ -16,7 +16,7 @@ const location = {
     UNTUK: 3,
     MESIN: 4,
 }
-const MAX_LOOP_ALLOWED = 100000;
+const MAX_LOOP_ALLOWED = 1000000;
 const MAX_STACK_SIZE = 500;
 
 // Implements all Expressions and Statements Visitor
@@ -454,7 +454,7 @@ export class Interpreter {
     }
 
     error(message) {
-        throw new SimplErrorEksekusi(`Error Eksekusi [Pada baris ke-${this.line}] ${message}`);
+        throw new SimplErrorEksekusi(`Error Eksekusi => ${message}`, this.line);
     }
 
     interpret(tree) {

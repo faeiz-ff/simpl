@@ -330,8 +330,8 @@ export class Jenis extends Stipe {
         let sym = Symbol(name);
         super(sym, null);
         this.member = new Environment();
-        enums.forEach(thing => {
-            this.member.define(thing.lexeme, new Value(sym, Symbol(thing.lexeme)));
+        enums.forEach((thing, idx) => {
+            this.member.define(thing.lexeme, new Value(sym, idx));
         });
         this.init(sym);
     }

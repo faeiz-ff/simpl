@@ -70,7 +70,7 @@ export class Parser {
             } while(this.match(TokenType.COMMA))
         }
 
-        this.eat(TokenType.RPAREN, "Mengharapkan ')' setelah pemanggilan mesin.");
+        this.eat(TokenType.RPAREN, "Mengharapkan ')' setelah penggunaan mesin.");
 
         return new Expr.Call(callable, args);
     }
@@ -453,7 +453,7 @@ export class Parser {
     }
 
     error(errmsg, found = true) {
-        throw new SimplErrorStruktur(`Error Struktur [Pada baris ke-${this.see().line}] ` + errmsg + ((found) ? ` Menemukan '${this.see().lexeme }'.` : ""));
+        throw new SimplErrorStruktur(`Error Struktur => ` + errmsg + ((found) ? ` Menemukan '${this.see().lexeme }'.` : ""), this.see().line);
     }
 
     parse(tokens) {
