@@ -2,7 +2,12 @@ var Simpl = (function () {
     'use strict';
 
     // Errors
-    class SimplError extends Error {}class SimplErrorEksekusi extends SimplError {}class SimplErrorStruktur extends SimplError {}class SimplErrorTulisan extends SimplError {}
+    class SimplError extends Error {
+        constructor(message, line) {
+            super(message);
+            this.line = line;
+        }
+    }class SimplErrorEksekusi extends SimplError {}class SimplErrorStruktur extends SimplError {}class SimplErrorTulisan extends SimplError {}
 
     // Environment defines a scope for all data to live in
     class Environment {
@@ -478,8 +483,8 @@ var Simpl = (function () {
             let sym = Symbol(name);
             super(sym, null);
             this.member = new Environment();
-            enums.forEach(thing => {
-                this.member.define(thing.lexeme, new Value(sym, Symbol(thing.lexeme)));
+            enums.forEach((thing, idx) => {
+                this.member.define(thing.lexeme, new Value(sym, idx));
             });
             this.init(sym);
         }
@@ -636,7 +641,7 @@ var Simpl = (function () {
         UNTUK: 3,
         MESIN: 4,
     };
-    const MAX_LOOP_ALLOWED = 100000;
+    const MAX_LOOP_ALLOWED = 1000000;
     const MAX_STACK_SIZE = 500;
 
     // Implements all Expressions and Statements Visitor
@@ -1074,7 +1079,7 @@ var Simpl = (function () {
         }
 
         error(message) {
-            throw new SimplErrorEksekusi(`Error Eksekusi [Pada baris ke-${this.line}] ${message}`);
+            throw new SimplErrorEksekusi(`Error Eksekusi => ${message}`, this.line);
         }
 
         interpret(tree) {
@@ -1124,6 +1129,7 @@ var Simpl = (function () {
         }
 
         see() {
+            if (this.isAtEnd()) return "EOF"
             return this.text[this.charIndex];
         }
 
@@ -1215,6 +1221,7 @@ var Simpl = (function () {
         string() {
             this.advance();
             while(!this.isAtEnd() && this.see() !== '"') this.advance();
+            if (this.isAtEnd()) this.error("Petik tidak tertutup.");
             this.advance();
             let lexeme = this.parseLexeme();
             return new Token(LITERAL, lexeme, lexeme.slice(1, lexeme.length-1), this.lineIndex);
@@ -1297,7 +1304,11 @@ var Simpl = (function () {
             }
             if (this.isAtEnd()) return;
 
-            throw new SimplErrorTulisan(`Error Tulisan [Pada Baris ke-${this.lineIndex}] karakter tidak valid: Menemukan '${this.see()}'.`);
+            this.error(`karakter tidak valid: Menemukan '${this.see()}'.`);
+        }
+
+        error(errmsg) {
+            throw new SimplErrorTulisan(`Error Tulisan => ` + errmsg, this.see().line);
         }
 
         debugPrintTokens(tokens) {
@@ -1715,7 +1726,7 @@ var Simpl = (function () {
                 } while(this.match(COMMA))
             }
 
-            this.eat(RPAREN, "Mengharapkan ')' setelah pemanggilan mesin.");
+            this.eat(RPAREN, "Mengharapkan ')' setelah penggunaan mesin.");
 
             return new Call(callable, args);
         }
@@ -2098,7 +2109,7 @@ var Simpl = (function () {
         }
 
         error(errmsg, found = true) {
-            throw new SimplErrorStruktur(`Error Struktur [Pada baris ke-${this.see().line}] ` + errmsg + ((found) ? ` Menemukan '${this.see().lexeme }'.` : ""));
+            throw new SimplErrorStruktur(`Error Struktur => ` + errmsg + ((found) ? ` Menemukan '${this.see().lexeme }'.` : ""), this.see().line);
         }
 
         parse(tokens) {
@@ -2124,6 +2135,7 @@ var Simpl = (function () {
 
         runCode(text) {
             // console.log(text.split("\n").reduce((codeStr, line, idx) => codeStr + `${idx + 1}.\t${line}\n`, ''));
+            const textLines = text.split("\n");
             try {
                 let tokens = this.lexer.scanTokens(text);
                 let pohon = this.parser.parse(tokens);
@@ -2131,7 +2143,8 @@ var Simpl = (function () {
                 return output.join("\n");
             } catch (err) {
                 if (err instanceof SimplError) {
-                    return err.message;
+                    const errorText = textLines[err.line-1];
+                    return (errorText ? `ERROR! Pada baris ke-${err.line}\n>> ` + errorText + '\n': "") + err.message;
                 } else {
                     return `[Pada baris ke-${this.interpreter.line}] Uh Oh, ini error sistem. Mohon laporkan agar diperbaiki. [ ${err} ]`;
                 }
