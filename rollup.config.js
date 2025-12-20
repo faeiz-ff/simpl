@@ -2,7 +2,7 @@ export default {
   input: "src/simpl.js",
   output: {
     file: "dist/simpl-interpreter.js",
-    format: "iife",
+    format: "es",
     name: "Simpl", 
   },
 };
