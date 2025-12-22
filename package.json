@@ -1,5 +1,5 @@
 {
-  "name": "simpl",
+  "name": "bahasa-simpl",
   "version": "1.0.0",
   "description": "Simpl: Indonesian Mini Programming Language interpreter",
   "main": "./dist/simpl-interpreter.js",

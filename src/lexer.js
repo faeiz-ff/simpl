@@ -141,7 +141,7 @@ export class Lexer {
 
     scan() {
         this.skipWhitespaces();
-        if(this.see() === '#') {
+        while (this.see() === '#') {
             this.comment();
             this.skipWhitespaces();
         }

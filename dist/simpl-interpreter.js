@@ -273,6 +273,9 @@ class PetikTipe extends Stipe {
         this.member.define("ganti", makeBuiltInFunc([petikSymbol, petikSymbol, petikSymbol], petikSymbol,
             (v, [d, what, rep]) => new Value(petikSymbol, d.data.replaceAll(what.data, rep.data))
         ));
+        this.member.define("besar", makeBuiltInFunc([petikSymbol], petikSymbol, (v, [p]) => {
+            return new Value(petikSymbol, p.data.toUpperCase())
+        }));
     }
 }
 
@@ -282,6 +285,10 @@ class AngkaTipe extends Stipe {
             callFunc: (v, args) => {
                 if (args.length !== 1) {
                     v.error(`Jumlah argumen tidak sama dengan parameter mesin: ${args.length} != 1.`);
+                }
+
+                if (typeof args[0].data === "number") {
+                    return new Value(angkaSymbol, args[0].data);
                 }
 
                 switch (args[0].type) {
@@ -295,7 +302,7 @@ class AngkaTipe extends Stipe {
                     case logisSymbol:
                         return new Value(angkaSymbol, Number(args[0].data));
                     default:
-                        v.error(`Tipe yang dapat diterima hanyalah petik, angka, dan logis. Mendapatkan ${args[0].type.description}.`);
+                        v.error(`Tipe yang dapat diterima hanyalah petik, angka, logis, dan jenis. Mendapatkan ${args[0].type.description}.`);
                         return;
                 }
             }
@@ -339,6 +346,16 @@ class AngkaTipe extends Stipe {
             makeBuiltInFunc([angkaSymbol], angkaSymbol, (v, [r]) => new Value(angkaSymbol, -r.data)));
 
         this.member = new Environment();
+        this.member.define("acak", makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (v, [a,b]) => {
+            let width = Math.abs(a.data-b.data);
+            let range = Math.random() * width;
+            let final = range + Math.min(a.data,b.data);
+            return new Value(angkaSymbol, final);
+        }));
+
+        this.member.define("bulat", makeBuiltInFunc([angkaSymbol], angkaSymbol, (v, [a]) => {
+            return new Value(angkaSymbol, Math.round(a.data));
+        }));
     }
 }
 
@@ -369,7 +386,7 @@ class LogisTipe extends Stipe {
         this.operators.define("SERU_UNARY",
             makeBuiltInFunc([logisSymbol], logisSymbol, (v, [r]) => new Value(logisSymbol, !Boolean(r.data))));
         
-        this.member = true;
+        this.member = new Environment();
     }
 }
 
@@ -433,7 +450,7 @@ class BarisTipe extends Stipe {
 class MesinTipe extends Stipe {
     constructor() {
         super(mesinSymbol);
-        this.member = true;
+        this.member = new Environment();
     }
 }
 
@@ -1240,7 +1257,7 @@ class Lexer {
 
     scan() {
         this.skipWhitespaces();
-        if(this.see() === '#') {
+        while (this.see() === '#') {
             this.comment();
             this.skipWhitespaces();
         }
