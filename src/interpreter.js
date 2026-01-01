@@ -44,7 +44,7 @@ export class Interpreter {
             case "boolean":
                 return new Value.Value(Value.logisSymbol, lit.value);
             default:
-                return new Value.Value(null, null);
+                return new Value.NIHIL;
         }
     }
 
@@ -53,10 +53,7 @@ export class Interpreter {
 
         for (let expr of arrayExpr.contents) {
             let v = this.validvalue(expr.accept(this));
-            // value.data.push(v);
-            let result = new Value.Value(v.type, v.data);
-            result.member = v.member;
-            value.data.push(new Value.Value(v.type, v.data));
+            value.data.push(v);
         }
 
         return value;
@@ -88,7 +85,7 @@ export class Interpreter {
     visitLambdaExpr(lambdaExpr) {
         // let type = lambdaExpr.returnValue.accept(this);
         let params = lambdaExpr.params.map(val=>[val[0].accept(this), val[0].tetap, val[1].lexeme]);
-        if (params.length > 1
+        if (params.length > 1 // this could be optimized with a Map checking previous names
             && params.some(param=>params.reduce((count, anotherParam)=>param[2]===anotherParam[2] ? count+1:count, 0) > 1 ? true : false)) {
                 this.error("Parameter mesin tidak boleh mempunyai nama yang sama.");
             }
@@ -111,15 +108,71 @@ export class Interpreter {
             this.error(`Hanya bisa 'memanggil' mesin atau model, malah menemukan ${callable.type.description}. `)
         }
 
-        if (!callable.data?.callFunc) {
+        if (!callable.data?.block) {
             this.error(`Mesin tidak terdefinisi, tidak bisa dipanggil.`);
         }
         this.line = this.stack[this.stack.length-1];
-        let result = callable.data.callFunc(this, callExpr.args.map(val=>this.validvalue(val.accept(this))));
+        let result = this.callFunc(callable.data, callExpr.args.map(val=>this.validvalue(val.accept(this))));
         this.stack.pop();
         if (this.stack.length == 0) this.state = location.GLOBAL;
         return result;
     }
+
+    callFunc(callable, args) {
+        if (args.length !== callable.parameters.length) {
+            this.error("Jumlah argumen tidak sama dengan parameter mesin:" + ` ${args.length} != ${this.parameters.length}.`);
+        }
+        
+        // for asserting _call_ error.
+        let callLineNum = this.line;
+
+        for(let i = 0; i < args.length; i++) {
+            let type = callable.parameters[i][0];
+            
+            if (type === null) continue;
+
+            if (args[i].type !== type) {
+                this.line = callLineNum;
+                this.error(`Tipe argumen tidak sama dengan parameter. ${args[i].type.description} != ${type.description}`);
+            }
+        }
+
+        if (callable.isBuiltIn) {
+            return callable.block(this, args);
+        } 
+
+        let visitorEnv = this.environment;
+        let funcEnv = new Environment(callable.closure);
+        this.environment = funcEnv;
+
+        for(let i = 0; i < args.length; i++) {
+            let [type, tetap, name] = callable.parameters[i];
+            if (type === null) {
+                type = args[i].type;
+            }
+            let variable = new Value.Variable(type, tetap, args[i].data);
+            variable.member = args[i].member;
+            
+            this.environment.define(name, variable);
+        }
+
+        let result = Value.NIHIL;
+        for(let stmt of callable.block.statements) {
+            try {
+                stmt.accept(this);
+            } catch (err) {
+                if (err instanceof Hasil) {
+                    result = err.value;
+                    break;
+                } else if (err instanceof Henti || err instanceof Lewat) {
+                    this.error("Tidak bisa menghentikan atau melewatkan mesin. ");
+                } else throw err;
+            }
+        }
+        this.environment = visitorEnv;
+        return result;
+    }
+
 
     visitBinaryExpr(binaryExpr) {
         let leftValue = this.validvalue(binaryExpr.left.accept(this));
