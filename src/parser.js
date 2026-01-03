@@ -371,7 +371,6 @@ export class Parser {
           shorthand.right = expr;
           expr = shorthand;
         }
-        console.log(expr);
         return new Stmt.Rubah(id, expr);
     }
 
