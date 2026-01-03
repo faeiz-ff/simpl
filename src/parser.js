@@ -358,8 +358,20 @@ export class Parser {
 
     rubahStmt() {
         let id = this.valuable();
+        let shorthand = null;
+        if (this.match(
+            TokenType.PLUS, TokenType.MINUS, TokenType.STAR, TokenType.SLASH, 
+            TokenType.AMPERSAND, TokenType.PIPE, TokenType.MODULUS
+          )) {
+            shorthand = new Expr.Binary(id, this.previous(), null);
+        }
         this.eat(TokenType.EQUAL, "Mengharapkan '=' setelah variable yang ingin di-'rubah'.");
         let expr = this.expression();
+        if (shorthand) {
+          shorthand.right = expr;
+          expr = shorthand;
+        }
+        console.log(expr);
         return new Stmt.Rubah(id, expr);
     }
 

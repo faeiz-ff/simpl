@@ -5,6 +5,11 @@ export class SimplError extends Error {
         this.line = line;
     }
 };
-export class SimplErrorEksekusi extends SimplError {};
+export class SimplErrorEksekusi extends SimplError {
+    constructor(message, line, output) {
+        super(message, line);
+        this.output = output;
+    }
+};
 export class SimplErrorStruktur extends SimplError {};
 export class SimplErrorTulisan extends SimplError {};

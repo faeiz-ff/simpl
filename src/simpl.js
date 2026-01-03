@@ -1,7 +1,7 @@
 import { Interpreter } from "./interpreter.js";
 import { Lexer } from "./lexer.js";
 import { Parser } from "./parser.js";
-import { SimplError } from "./simpl-error.js";
+import { SimplError, SimplErrorEksekusi } from "./simpl-error.js";
 
 // Simpl: Indonesian Mini Programming Language !!
 
@@ -22,8 +22,12 @@ class Simpl {
             return output.join("\n");
         } catch (err) {
             if (err instanceof SimplError) {
-                const errorText = textLines[err.line-1];
-                return (errorText ? `ERROR! Pada baris ke-${err.line}\n>> ` + errorText + '\n': "") + err.message;
+                const errorCode = textLines[err.line-1];
+                let errorText = (errorCode ? `ERROR! Pada baris ke-${err.line}\n>> ` + errorCode + '\n': "") + err.message;
+                if (err instanceof SimplErrorEksekusi) {
+                   errorText += (err.output ? "\nOutput dari kode:\n" : "") + err.output; 
+                }
+                return errorText;
             } else {
                 return `[Pada baris ke-${this.interpreter.line}] Uh Oh, ini error sistem. Mohon laporkan agar diperbaiki. [ ${err} ]`;
             }

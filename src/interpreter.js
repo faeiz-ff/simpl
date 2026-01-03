@@ -29,6 +29,8 @@ export class Interpreter {
         this.state = location.GLOBAL;
         this.stack = [];
         this.output = [];
+        this.objectStack = null;
+        this.exprWillBeCalled = false;
     }
 
     // EXPRESSION VISITORS
@@ -85,8 +87,18 @@ export class Interpreter {
     visitLambdaExpr(lambdaExpr) {
         // let type = lambdaExpr.returnValue.accept(this);
         let params = lambdaExpr.params.map(val=>[val[0].accept(this), val[0].tetap, val[1].lexeme]);
-        if (params.length > 1 // this could be optimized with a Map checking previous names
-            && params.some(param=>params.reduce((count, anotherParam)=>param[2]===anotherParam[2] ? count+1:count, 0) > 1 ? true : false)) {
+
+        const check_duplicate_name = (p) => {
+            let mapped = new Map();
+            for (let name of p) {
+                if (mapped.has(name)) return true;
+                mapped.set(name, true);
+            }
+            return false;
+        }
+
+        if (params.length > 1 
+            && check_duplicate_name(params.map(p=>p[2])) ){
                 this.error("Parameter mesin tidak boleh mempunyai nama yang sama.");
             }
         let retType = null;
@@ -98,12 +110,11 @@ export class Interpreter {
     }
 
     visitCallExpr(callExpr) {
-        this.stack.push(this.line);
-        if (this.stack.length > MAX_STACK_SIZE) 
-            this.error(`Rekursi melebihi batas: Lebih dari ${MAX_STACK_SIZE}`);
-        this.state = location.MESIN;
-        let callable = callExpr.callable.accept(this);
 
+        this.exprWillBeCalled = true;
+        let callable = callExpr.callable.accept(this);
+        this.exprWillBeCalled = false;
+        
         if (callable.type !== Value.mesinSymbol && callable.type !== Value.stipeSymbol) {
             this.error(`Hanya bisa 'memanggil' mesin atau model, malah menemukan ${callable.type.description}. `)
         }
@@ -111,16 +122,33 @@ export class Interpreter {
         if (!callable.data?.block) {
             this.error(`Mesin tidak terdefinisi, tidak bisa dipanggil.`);
         }
-        this.line = this.stack[this.stack.length-1];
-        let result = this.callFunc(callable.data, callExpr.args.map(val=>this.validvalue(val.accept(this))));
-        this.stack.pop();
-        if (this.stack.length == 0) this.state = location.GLOBAL;
+        
+        let args = [];
+
+        if (this.objectStack) {
+           args = [this.objectStack]; 
+           this.objectStack = null;
+        }
+
+        args = [...args, ...callExpr.args.map(val=>this.validvalue(val.accept(this)))];
+
+        let result = this.callFunc(callable.data, args);
         return result;
     }
 
     callFunc(callable, args) {
+        // args.forEach((val,idx)=>{
+        //     console.log(idx, val);
+        // });
+        this.stack.push(this.line);
+        if (this.stack.length > MAX_STACK_SIZE) 
+            this.error(`Rekursi melebihi batas: Lebih dari ${MAX_STACK_SIZE}`);
+
+        this.line = this.stack[this.stack.length-1];
+        this.state = location.MESIN;
+
         if (args.length !== callable.parameters.length) {
-            this.error("Jumlah argumen tidak sama dengan parameter mesin:" + ` ${args.length} != ${this.parameters.length}.`);
+            this.error(`Jumlah argumen tidak sama dengan parameter mesin. Menemukan ${args.length}, harusnya ${callable.parameters.length}.`);
         }
         
         // for asserting _call_ error.
@@ -130,14 +158,15 @@ export class Interpreter {
             let type = callable.parameters[i][0];
             
             if (type === null) continue;
-
             if (args[i].type !== type) {
                 this.line = callLineNum;
-                this.error(`Tipe argumen tidak sama dengan parameter. ${args[i].type.description} != ${type.description}`);
+                this.error(`Tipe argumen tidak sama dengan parameter. Menemukan ${args[i].type.description}, harusnya ${type.description}`);
             }
         }
 
         if (callable.isBuiltIn) {
+            this.stack.pop();
+            if (this.stack.length == 0) this.state = location.GLOBAL;
             return callable.block(this, args);
         } 
 
@@ -169,6 +198,8 @@ export class Interpreter {
                 } else throw err;
             }
         }
+        this.stack.pop();
+        if (this.stack.length == 0) this.state = location.GLOBAL;
         this.environment = visitorEnv;
         return result;
     }
@@ -220,15 +251,23 @@ export class Interpreter {
     }
 
     visitMemberExpr(memberExpr) {
+        let willBeCalled = this.exprWillBeCalled;
+        this.exprWillBeCalled = false;
         let main = memberExpr.main.accept(this);
         let name = memberExpr.member.token.lexeme;
         this.line = memberExpr.member.token.line;
-        if (!main.member) {
-            this.error(`Nilai tidak mempunyai atribut sama sekali.`);
-        } else if (!main.member.has(name)) {
-            this.error(`atribut .${name} tidak dapat ditemukan.`);
+        if (!main.member || !main.member.has(name)) {
+            const type = this.environment.get(main.type.description);
+            if (type.member?.has(name)) {
+                if (willBeCalled) {
+                  this.objectStack = main;
+                }
+                return type.member.get(name);
+            }
+            this.error(`nama .${name} tidak ditemukan dalam tipe ${main.type.description}`);
+        } else {
+            return main.member.get(name);
         }
-        return main.member.get(name);
     }
 
     // STATEMENT VISITORS
@@ -247,7 +286,10 @@ export class Interpreter {
             if (thing.type === Value.logisSymbol) {
                 return thing.data ? "benar" : "salah";
             } else if (thing.type === Value.barisSymbol) {
-                return '[' + thing.data.reduce((str, val)=>str+", "+kePetik(val), "").slice(1) + ' ]';
+                return '[' + thing.data.reduce((str, val)=>{
+                  let item = kePetik(val);
+                  return str + ", " + (val.type === Value.petikSymbol ? `"${item}"` : item);
+                }, "").slice(1) + ' ]';
             } else if (thing.type === Value.stipeSymbol) {
                 return `Model<${thing.symbol.description}>`;
             } else if (thing.type === Value.mesinSymbol) {
@@ -256,9 +298,18 @@ export class Interpreter {
             } else if (thing.type === Value.angkaSymbol) {
                 return thing.data.toString();
             } else if (thing.type === Value.petikSymbol) {
-                return '"' + thing.data + '"';
+                return thing.data;
             } else {
                 if (!thing?.type) return `nihil`;
+                let type = this.environment.get(thing.type.description);
+                if (type?.member?.has("kePetik")) {
+                    this.state = location.MESIN;
+                    this.stack.push(this.line);
+                    let res = this.callFunc(type.member.get("kePetik").data, [thing]).data;
+                    this.stack.pop();
+                    this.state = this.stack > 0 ? location.MESIN : location.GLOBAL;
+                    return res;
+                }
                 return `${thing.type.description}<>`;
             }
         }
@@ -507,7 +558,7 @@ export class Interpreter {
     }
 
     error(message) {
-        throw new SimplErrorEksekusi(`Error Eksekusi => ${message}`, this.line);
+        throw new SimplErrorEksekusi(`Error Eksekusi => ${message}`, this.line, this.output.join('\n'));
     }
 
     interpret(tree) {
