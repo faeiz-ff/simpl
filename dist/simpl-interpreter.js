@@ -1145,8 +1145,7 @@ class Interpreter {
         }
 
         let lastEnv = this.environment;
-        this.environment = new Environment(this.globalEnvironment);
-        if (variable) this.environment.define(name, variable);
+        this.environment = new Environment(this.environment);
         for (let stmt of modulStmt.statements) {
             stmt.accept(this);
         }
@@ -2140,7 +2139,6 @@ class Parser {
           shorthand.right = expr;
           expr = shorthand;
         }
-        console.log(expr);
         return new Rubah(id, expr);
     }
 

@@ -6,8 +6,8 @@ export class StmtBase {
 }
 
 export class Cetak extends StmtBase {
- // Expr.ExprBase expr
-    constructor (expr) {
+    // Expr.ExprBase expr
+    constructor(expr) {
         super();
         this.expr = expr;
     }
@@ -18,8 +18,8 @@ export class Cetak extends StmtBase {
 }
 
 export class Datum extends StmtBase {
- // Stmt.Type type, Token name, Expr.ExprBase expr
-    constructor (type, name, expr) {
+    // Stmt.Type type, Token name, Expr.ExprBase expr
+    constructor(type, name, expr) {
         super();
         this.type = type;
         this.name = name;
@@ -32,8 +32,8 @@ export class Datum extends StmtBase {
 }
 
 export class Type extends StmtBase {
- // Expr.ExprBase type, bool tetap, Array<Stmt.Type> contents
-    constructor (type, tetap, contents) {
+    // Expr.ExprBase type, bool tetap, Array<Stmt.Type> contents
+    constructor(type, tetap, contents) {
         super();
         this.type = type;
         this.tetap = tetap;
@@ -46,8 +46,8 @@ export class Type extends StmtBase {
 }
 
 export class Kerja extends StmtBase {
- // Expr.ExprBase expr
-    constructor (expr) {
+    // Expr.ExprBase expr
+    constructor(expr) {
         super();
         this.expr = expr;
     }
@@ -58,8 +58,8 @@ export class Kerja extends StmtBase {
 }
 
 export class Block extends StmtBase {
- // Array<Stmt.StmtBase> statements
-    constructor (statements) {
+    // Array<Stmt.StmtBase> statements
+    constructor(statements) {
         super();
         this.statements = statements;
     }
@@ -70,8 +70,8 @@ export class Block extends StmtBase {
 }
 
 export class Kalau extends StmtBase {
- // Expr.ExprBase condition, Stmt.Block thenBlock, Stmt.Kalau elseKalau
-    constructor (condition, thenBlock, elseKalau) {
+    // Expr.ExprBase condition, Stmt.Block thenBlock, Stmt.Kalau elseKalau
+    constructor(condition, thenBlock, elseKalau) {
         super();
         this.condition = condition;
         this.thenBlock = thenBlock;
@@ -84,8 +84,8 @@ export class Kalau extends StmtBase {
 }
 
 export class Untuk extends StmtBase {
- // Stmt.Type varType, Token varName, Expr.Base iterable, Stmt.Block block
-    constructor (varType, varName, iterable, block) {
+    // Stmt.Type varType, Token varName, Expr.Base iterable, Stmt.Block block
+    constructor(varType, varName, iterable, block) {
         super();
         this.varType = varType;
         this.varName = varName;
@@ -99,8 +99,8 @@ export class Untuk extends StmtBase {
 }
 
 export class Slagi extends StmtBase {
- // Expr.ExprBase condition, Stmt.Block block
-    constructor (condition, block) {
+    // Expr.ExprBase condition, Stmt.Block block
+    constructor(condition, block) {
         super();
         this.condition = condition;
         this.block = block;
@@ -112,7 +112,7 @@ export class Slagi extends StmtBase {
 }
 
 export class Henti extends StmtBase {
-    constructor () {
+    constructor() {
         super();
     }
 
@@ -122,7 +122,7 @@ export class Henti extends StmtBase {
 }
 
 export class Lewat extends StmtBase {
-    constructor () {
+    constructor() {
         super();
     }
 
@@ -132,8 +132,8 @@ export class Lewat extends StmtBase {
 }
 
 export class Rubah extends StmtBase {
- // Expr.ExprBase variable, Expr.ExprBase value
-    constructor (variable, value) {
+    // Expr.ExprBase variable, Expr.ExprBase value
+    constructor(variable, value) {
         super();
         this.variable = variable;
         this.value = value;
@@ -145,8 +145,8 @@ export class Rubah extends StmtBase {
 }
 
 export class Hasil extends StmtBase {
- // Expr.ExprBase expr
-    constructor (expr) {
+    // Expr.ExprBase expr
+    constructor(expr) {
         super();
         this.expr = expr;
     }
@@ -157,8 +157,8 @@ export class Hasil extends StmtBase {
 }
 
 export class Jenis extends StmtBase {
- // Token name, Array<Token> enums
-    constructor (name, enums) {
+    // Token name, Array<Token> enums
+    constructor(name, enums) {
         super();
         this.name = name;
         this.enums = enums;
@@ -170,8 +170,8 @@ export class Jenis extends StmtBase {
 }
 
 export class Model extends StmtBase {
- // Token name, Array<Stmt.Type-Token> contents
-    constructor (name, contents) {
+    // Token name, Array<Stmt.Type-Token> contents
+    constructor(name, contents) {
         super();
         this.name = name;
         this.contents = contents;
@@ -183,8 +183,8 @@ export class Model extends StmtBase {
 }
 
 export class Simpl extends StmtBase {
- // Array<Stmt.StmtBase> statements
-    constructor (statements) {
+    // Array<Stmt.StmtBase> statements
+    constructor(statements) {
         super();
         this.statements = statements;
     }
@@ -195,8 +195,8 @@ export class Simpl extends StmtBase {
 }
 
 export class Modul extends StmtBase {
- // Token name, Array<Stmt.StmtBase> statements
-    constructor (name, statements) {
+    // Token name, Array<Stmt.StmtBase> statements
+    constructor(name, statements) {
         super();
         this.name = name;
         this.statements = statements;

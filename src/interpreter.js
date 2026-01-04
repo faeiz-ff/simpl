@@ -2,8 +2,8 @@ import { SimplErrorEksekusi } from "./simpl-error.js";
 import { Environment } from "./environment.js";
 import * as Value from "./globals.js";
 
-export class Henti {}
-export class Lewat {}
+export class Henti { }
+export class Lewat { }
 export class Hasil {
     constructor(value) {
         this.value = value;
@@ -16,7 +16,6 @@ const location = {
     UNTUK: 3,
     MESIN: 4,
 }
-const MAX_LOOP_ALLOWED = 1000000;
 const MAX_STACK_SIZE = 500;
 
 // Implements all Expressions and Statements Visitor
@@ -38,15 +37,15 @@ export class Interpreter {
     visitLiteralExpr(literalExpr) {
         let lit = literalExpr.token;
         this.line = lit.line;
-        switch(typeof lit.value) {
-            case "string": 
+        switch (typeof lit.value) {
+            case "string":
                 return new Value.Value(Value.petikSymbol, lit.value);
-            case "number": 
+            case "number":
                 return new Value.Value(Value.angkaSymbol, lit.value);
             case "boolean":
                 return new Value.Value(Value.logisSymbol, lit.value);
             default:
-                return new Value.NIHIL;
+                return Value.NIHIL;
         }
     }
 
@@ -54,7 +53,7 @@ export class Interpreter {
         let value = new Value.Value(Value.barisSymbol, []);
 
         for (let expr of arrayExpr.contents) {
-            let v = this.validvalue(expr.accept(this));
+            let v = this.validValue(expr.accept(this));
             value.data.push(v);
         }
 
@@ -65,7 +64,7 @@ export class Interpreter {
         // a real TODO would've been to implement real iterables
         let iterable = indexExpr.iterable.accept(this);
         if (iterable.type === Value.petikSymbol) {
-            iterable = new Value.Value(Value.barisSymbol, iterable.data.split("").map(str=>new Value.Value(Value.petikSymbol, str)));
+            iterable = new Value.Value(Value.barisSymbol, iterable.data.split("").map(str => new Value.Value(Value.petikSymbol, str)));
         }
         if (iterable.type !== Value.barisSymbol) {
             this.error(`'${iterable.type.description}' bukan baris/petik, tidak bisa di-indeks`);
@@ -86,7 +85,7 @@ export class Interpreter {
 
     visitLambdaExpr(lambdaExpr) {
         // let type = lambdaExpr.returnValue.accept(this);
-        let params = lambdaExpr.params.map(val=>[val[0].accept(this), val[0].tetap, val[1].lexeme]);
+        let params = lambdaExpr.params.map(val => [val[0].accept(this), val[0].tetap, val[1].lexeme]);
 
         const check_duplicate_name = (p) => {
             let mapped = new Map();
@@ -97,10 +96,10 @@ export class Interpreter {
             return false;
         }
 
-        if (params.length > 1 
-            && check_duplicate_name(params.map(p=>p[2])) ){
-                this.error("Parameter mesin tidak boleh mempunyai nama yang sama.");
-            }
+        if (params.length > 1
+            && check_duplicate_name(params.map(p => p[2]))) {
+            this.error("Parameter mesin tidak boleh mempunyai nama yang sama.");
+        }
         let retType = null;
         if (lambdaExpr.returnType) {
             retType = lambdaExpr.returnType.accept(this);
@@ -114,7 +113,7 @@ export class Interpreter {
         this.exprWillBeCalled = true;
         let callable = callExpr.callable.accept(this);
         this.exprWillBeCalled = false;
-        
+
         if (callable.type !== Value.mesinSymbol && callable.type !== Value.stipeSymbol) {
             this.error(`Hanya bisa 'memanggil' mesin atau model, malah menemukan ${callable.type.description}. `)
         }
@@ -122,15 +121,15 @@ export class Interpreter {
         if (!callable.data?.block) {
             this.error(`Mesin tidak terdefinisi, tidak bisa dipanggil.`);
         }
-        
+
         let args = [];
 
         if (this.objectStack) {
-           args = [this.objectStack]; 
-           this.objectStack = null;
+            args = [this.objectStack];
+            this.objectStack = null;
         }
 
-        args = [...args, ...callExpr.args.map(val=>this.validvalue(val.accept(this)))];
+        args = [...args, ...callExpr.args.map(val => this.validValue(val.accept(this)))];
 
         let result = this.callFunc(callable.data, args);
         return result;
@@ -141,22 +140,23 @@ export class Interpreter {
         //     console.log(idx, val);
         // });
         this.stack.push(this.line);
-        if (this.stack.length > MAX_STACK_SIZE) 
+        if (this.stack.length > MAX_STACK_SIZE)
             this.error(`Rekursi melebihi batas: Lebih dari ${MAX_STACK_SIZE}`);
 
-        this.line = this.stack[this.stack.length-1];
+        let prevState = this.state;
+        this.line = this.stack[this.stack.length - 1];
         this.state = location.MESIN;
 
         if (args.length !== callable.parameters.length) {
             this.error(`Jumlah argumen tidak sama dengan parameter mesin. Menemukan ${args.length}, harusnya ${callable.parameters.length}.`);
         }
-        
+
         // for asserting _call_ error.
         let callLineNum = this.line;
 
-        for(let i = 0; i < args.length; i++) {
+        for (let i = 0; i < args.length; i++) {
             let type = callable.parameters[i][0];
-            
+
             if (type === null) continue;
             if (args[i].type !== type) {
                 this.line = callLineNum;
@@ -166,27 +166,27 @@ export class Interpreter {
 
         if (callable.isBuiltIn) {
             this.stack.pop();
-            if (this.stack.length == 0) this.state = location.GLOBAL;
+            this.state = prevState;
             return callable.block(this, args);
-        } 
+        }
 
         let visitorEnv = this.environment;
         let funcEnv = new Environment(callable.closure);
         this.environment = funcEnv;
 
-        for(let i = 0; i < args.length; i++) {
+        for (let i = 0; i < args.length; i++) {
             let [type, tetap, name] = callable.parameters[i];
             if (type === null) {
                 type = args[i].type;
             }
             let variable = new Value.Variable(type, tetap, args[i].data);
             variable.member = args[i].member;
-            
+
             this.environment.define(name, variable);
         }
 
         let result = Value.NIHIL;
-        for(let stmt of callable.block.statements) {
+        for (let stmt of callable.block.statements) {
             try {
                 stmt.accept(this);
             } catch (err) {
@@ -199,15 +199,15 @@ export class Interpreter {
             }
         }
         this.stack.pop();
-        if (this.stack.length == 0) this.state = location.GLOBAL;
+        this.state = prevState;
         this.environment = visitorEnv;
         return result;
     }
 
 
     visitBinaryExpr(binaryExpr) {
-        let leftValue = this.validvalue(binaryExpr.left.accept(this));
-        let rightValue = this.validvalue(binaryExpr.right.accept(this));
+        let leftValue = this.validValue(binaryExpr.left.accept(this));
+        let rightValue = this.validValue(binaryExpr.right.accept(this));
 
         this.line = binaryExpr.op.line;
 
@@ -224,7 +224,7 @@ export class Interpreter {
     }
 
     visitUnaryExpr(unaryExpr) {
-        let rightValue = this.validvalue(unaryExpr.right.accept(this));
+        let rightValue = this.validValue(unaryExpr.right.accept(this));
 
         this.line = unaryExpr.op.line;
 
@@ -233,18 +233,18 @@ export class Interpreter {
             this.error(`Tidak bisa mengoperasikan nilai Nihil.`);
         }
 
-         let result = this.environment.get(rightValue.type.description) // get Model
+        let result = this.environment.get(rightValue.type.description) // get Model
             .operate(this, unaryExpr.op.type, rightValue); // dispatch the operation
 
         return result;
     }
 
     visitGroupingExpr(groupingExpr) {
-        return groupingExpr.expr.accept(this);
+        return this.validValue(groupingExpr.expr.accept(this));
     }
 
     visitIdentifierExpr(identifierExpr) {
-        let value =  this.environment.get(identifierExpr.token.lexeme);
+        let value = this.environment.get(identifierExpr.token.lexeme);
         this.line = identifierExpr.token.line;
         if (!value) this.error(`'${identifierExpr.token.lexeme}' tidak dapat ditemukan.`);
         return value;
@@ -260,7 +260,7 @@ export class Interpreter {
             const type = this.environment.get(main.type.description);
             if (type.member?.has(name)) {
                 if (willBeCalled) {
-                  this.objectStack = main;
+                    this.objectStack = main;
                 }
                 return type.member.get(name);
             }
@@ -275,7 +275,7 @@ export class Interpreter {
     // this is needed for interpreting generics TODO!
     visitTypeStmt(typeStmt) {
         if (typeStmt.type === null) return null;
-        let type =  typeStmt.type.accept(this);
+        let type = typeStmt.type.accept(this);
         if (type.type !== Value.stipeSymbol) this.error(`'${type.type.description}' bukan sebuah Model/Tipe Valid.`);
         return type.symbol;
     }
@@ -286,15 +286,15 @@ export class Interpreter {
             if (thing.type === Value.logisSymbol) {
                 return thing.data ? "benar" : "salah";
             } else if (thing.type === Value.barisSymbol) {
-                return '[' + thing.data.reduce((str, val)=>{
-                  let item = kePetik(val);
-                  return str + ", " + (val.type === Value.petikSymbol ? `"${item}"` : item);
+                return '[' + thing.data.reduce((str, val) => {
+                    let item = kePetik(val);
+                    return str + ", " + (val.type === Value.petikSymbol ? `"${item}"` : item);
                 }, "").slice(1) + ' ]';
             } else if (thing.type === Value.stipeSymbol) {
                 return `Model<${thing.symbol.description}>`;
             } else if (thing.type === Value.mesinSymbol) {
                 let underlying = thing.data.returnType?.description;
-                return `Mesin<${underlying? underlying : 'datum'}>`;
+                return `Mesin<${underlying ? underlying : 'datum'}>`;
             } else if (thing.type === Value.angkaSymbol) {
                 return thing.data.toString();
             } else if (thing.type === Value.petikSymbol) {
@@ -303,11 +303,12 @@ export class Interpreter {
                 if (!thing?.type) return `nihil`;
                 let type = this.environment.get(thing.type.description);
                 if (type?.member?.has("kePetik")) {
+                    let prevState = this.state;
                     this.state = location.MESIN;
                     this.stack.push(this.line);
                     let res = this.callFunc(type.member.get("kePetik").data, [thing]).data;
                     this.stack.pop();
-                    this.state = this.stack > 0 ? location.MESIN : location.GLOBAL;
+                    this.state = prevState;
                     return res;
                 }
                 return `${thing.type.description}<>`;
@@ -329,7 +330,7 @@ export class Interpreter {
 
         let variable = new Value.Variable(type, datumStmt.type.tetap);
 
-        let value = this.validvalue(datumStmt.expr.accept(this));
+        let value = this.validValue(datumStmt.expr.accept(this));
 
         if (value.data === null) value.type = variable.type; // if nihil, ok
 
@@ -338,7 +339,7 @@ export class Interpreter {
             variable.type = value.type;
         } else this.typeCheck(variable, value, `Pada pembuatan variabel '${name}'`);
 
-        variable.data = value.data; 
+        variable.data = value.data;
         variable.member = value.member;
 
         this.environment.define(name, variable);
@@ -349,7 +350,7 @@ export class Interpreter {
         if (variable.tetap) {
             this.error(`Variabel tetap tidak dapat di-rubah.`);
         }
-        let value = this.validvalue(rubahStmt.value.accept(this));
+        let value = this.validValue(rubahStmt.value.accept(this));
         if (value.data === null) value.type = variable.type; // if nihil, ok
 
         if (variable.isDatum)
@@ -377,7 +378,10 @@ export class Interpreter {
     visitKalauStmt(kalauStmt) {
         // condition may be null for 'namun', accept the thenBlock if it is
         let condition = kalauStmt.condition?.accept(this);
-        if (condition === null || condition === undefined || condition.data || condition.member) {
+        if (condition.type !== Value.logisSymbol) {
+            this.error(`Ekspresi dalam 'kalau' harus bertipe logis, menemukan ${condition.type ? condition.type.description : "nihil"}`);
+        }
+        if (condition === null || condition === undefined || condition.data) {
             kalauStmt.thenBlock.accept(this);
         } else {
             kalauStmt.elseKalau?.accept(this); // kalau may not have namun
@@ -385,14 +389,14 @@ export class Interpreter {
     }
 
     visitHentiStmt() {
-        if (this.state !== location.GLOBAL)
+        if (this.state === location.UNTUK || this.state === location.SLAGI)
             throw new Henti(); // throws exception to escape from deep recursion
         else this.error("Tidak ada pengulangan untuk dihentikan.");
     }
 
-    
+
     visitLewatStmt() {
-        if (this.state !== location.GLOBAL)
+        if (this.state === location.UNTUK || this.state === location.SLAGI)
             throw new Lewat(); // throws exception to escape from deep recursion
         else this.error("Tidak ada pengulangan untuk dilewatkan.");
     }
@@ -405,18 +409,19 @@ export class Interpreter {
     }
 
     visitSlagiStmt(slagiStmt) {
-        const checkTruthy = (v) => v.data || v.member;
+        const checkTruthy = (v) => {
+            if (v.type !== Value.logisSymbol) {
+                this.error(`Ekspresi dalam 'slagi' harus bertipe 'logis', menemukan ${v.type ? v.type.description : "nihil" }`)
+            }
+            return v.data;
+        }
         let lastEnv = this.environment;
-        let howManyLoop = 0;
         while (checkTruthy(slagiStmt.condition.accept(this))) {
-            howManyLoop++;
-            if (howManyLoop > MAX_LOOP_ALLOWED) 
-                this.error(`Pengulangan melebihi batas: lebih dari ${MAX_LOOP_ALLOWED}.`);
             this.environment = new Environment(lastEnv);
             try {
                 for (let stmt of slagiStmt.block.statements) {
                     this.state = location.SLAGI;
-                    stmt.accept(this); 
+                    stmt.accept(this);
                     this.state = location.SLAGI;
                 }
             } catch (err) {
@@ -435,10 +440,10 @@ export class Interpreter {
     visitUntukStmt(untukStmt) {
         let name = this.validName(untukStmt.varName.lexeme, false);
         let type = untukStmt.varType.accept(this);
-        
-        let iter = untukStmt.iterable.accept(this);
+
+        let iter = this.validValue(untukStmt.iterable.accept(this));
         if (iter.type === Value.petikSymbol) {
-            iter = new Value.Value(Value.barisSymbol, iter.data.split("").map(str=>new Value.Value(Value.petikSymbol, str)));
+            iter = new Value.Value(Value.barisSymbol, iter.data.split("").map(str => new Value.Value(Value.petikSymbol, str)));
         }
         if (iter.type !== Value.barisSymbol) {
             this.error(`Pernyataan 'untuk' harus mengiterasi sebuah baris atau petik, bukan ${iter.type.description}`);
@@ -458,7 +463,7 @@ export class Interpreter {
                 // didn't 'accept' the block, just uses it directly
                 for (let stmt of untukStmt.block.statements) {
                     this.state = location.UNTUK;
-                    stmt.accept(this); 
+                    stmt.accept(this);
                     this.state = location.UNTUK;
                 }
             } catch (err) {
@@ -542,13 +547,13 @@ export class Interpreter {
         return false;
     }
 
-    validvalue(v) {
+    validValue(v) {
         if (v.type !== Value.stipeSymbol) return v;
         this.error("stipe tidak dapat menjadi nilai.");
     }
 
     validName(n, checkExisted = true) {
-        if (Value.RESERVED_NAMES.some(v=>v===n)) {
+        if (Value.RESERVED_NAMES.some(v => v === n)) {
             this.error(`Nama sistem (${n}) tidak boleh didefinisi ulang.`);
         } else if (checkExisted && this.environment.has(n)) {
             this.error(`Variabel dengan nama '${n}' sudah ada. Tidak bisa didefinisi ulang.`);

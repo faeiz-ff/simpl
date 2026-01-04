@@ -11,5 +11,5 @@ export class SimplErrorEksekusi extends SimplError {
         this.output = output;
     }
 };
-export class SimplErrorStruktur extends SimplError {};
-export class SimplErrorTulisan extends SimplError {};
+export class SimplErrorStruktur extends SimplError { };
+export class SimplErrorTulisan extends SimplError { };

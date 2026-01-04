@@ -32,7 +32,7 @@ export class Lexer {
     }
 
     peek(num = 1) {
-        return this.isAtEnd() ? null : this.text[this.charIndex+num];
+        return this.isAtEnd() ? null : this.text[this.charIndex + num];
     }
 
     isAlpha(char) {
@@ -69,23 +69,23 @@ export class Lexer {
             if (token) tokens.push(token);
         }
 
-        tokens.push(new Token(TokenType.EOF, null, null, this.lineIndex));
+        tokens.push(new Token(TokenType.EOF, "Akhir dokumen", null, this.lineIndex));
 
         this.tokens = tokens;
         return this.tokens;
     }
 
     id() {
-        while(!this.isAtEnd() && this.isAlphaNumeric(this.see())) this.advance();
-        
+        while (!this.isAtEnd() && this.isAlphaNumeric(this.see())) this.advance();
+
         let lexeme = this.parseLexeme();
 
-        let reservedIndex = TokenType.RESERVED_KEYWORDS.findIndex((val)=>val===lexeme);
+        let reservedIndex = TokenType.RESERVED_KEYWORDS.findIndex((val) => val === lexeme);
         if (reservedIndex != -1) {
             return new Token(reservedIndex, lexeme, null, this.lineIndex);
         }
 
-        let isLogis = ["benar", "salah"].some((val)=>val===lexeme)
+        let isLogis = ["benar", "salah"].some((val) => val === lexeme)
         if (isLogis) {
             return new Token(TokenType.LITERAL, lexeme, "benar" === lexeme ? true : false, this.lineIndex);
         }
@@ -95,7 +95,7 @@ export class Lexer {
         }
 
         return new Token(
-            TokenType.ID, 
+            TokenType.ID,
             lexeme,
             null,
             this.lineIndex
@@ -104,7 +104,7 @@ export class Lexer {
 
     number() {
         let isFloat = false;
-        while(!this.isAtEnd() && this.isNumeric(this.see())) {
+        while (!this.isAtEnd() && this.isNumeric(this.see())) {
             this.advance();
             if (this.see() === '.') {
                 if (isFloat) break;
@@ -118,15 +118,15 @@ export class Lexer {
 
     string() {
         this.advance();
-        while(!this.isAtEnd() && this.see() !== '"') this.advance();
+        while (!this.isAtEnd() && this.see() !== '"') this.advance();
         if (this.isAtEnd()) this.error("Petik tidak tertutup.");
         this.advance();
         let lexeme = this.parseLexeme();
-        return new Token(TokenType.LITERAL, lexeme, lexeme.slice(1, lexeme.length-1), this.lineIndex);
+        return new Token(TokenType.LITERAL, lexeme, lexeme.slice(1, lexeme.length - 1), this.lineIndex);
     }
 
     comment() {
-        while(!this.isAtEnd() && this.see() !== '\n') {
+        while (!this.isAtEnd() && this.see() !== '\n') {
             this.advance();
             this.charStart++;
         }
@@ -147,10 +147,10 @@ export class Lexer {
         }
 
 
-        if(this.isAlpha(this.see())) return this.id();
-        if(this.isNumeric(this.see())) return this.number();
+        if (this.isAlpha(this.see())) return this.id();
+        if (this.isNumeric(this.see())) return this.number();
 
-        switch(this.see()) {
+        switch (this.see()) {
             case "+": return this.makeToken(TokenType.PLUS);
             case "-": return this.makeToken(TokenType.MINUS);
             case "/": return this.makeToken(TokenType.SLASH);
@@ -166,27 +166,27 @@ export class Lexer {
             case "|": return this.makeToken(TokenType.PIPE);
             case "&": return this.makeToken(TokenType.AMPERSAND);
             case "%": return this.makeToken(TokenType.MODULUS);
-            case "!": 
+            case "!":
                 if (this.peek() === "=") {
                     this.advance();
                     return this.makeToken(TokenType.BANG_EQUAL);
                 }
                 return this.makeToken(TokenType.BANG);
 
-            case ">": 
+            case ">":
                 if (this.peek() === "=") {
                     this.advance();
-                    return this.makeToken(TokenType.GREATER_EQUAL)                    
+                    return this.makeToken(TokenType.GREATER_EQUAL)
                 }
                 return this.makeToken(TokenType.GREATER);
-            case "<": 
+            case "<":
                 if (this.peek() === "=") {
                     this.advance();
                     return this.makeToken(TokenType.LESS_EQUAL)
                 }
                 return this.makeToken(TokenType.LESS);
 
-            case "=": 
+            case "=":
                 if (this.peek() === "=" && this.peek(2) === ">") {
                     return this.makeToken(TokenType.EQUAL);
                 } else if (this.peek() === "=") {

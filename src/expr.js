@@ -6,8 +6,8 @@ export class ExprBase {
 }
 
 export class Binary extends ExprBase {
- // Expr.ExprBase left, Token op, Expr.ExprBase right
-    constructor (left, op, right) {
+    // Expr.ExprBase left, Token op, Expr.ExprBase right
+    constructor(left, op, right) {
         super();
         this.left = left;
         this.op = op;
@@ -20,8 +20,8 @@ export class Binary extends ExprBase {
 }
 
 export class Unary extends ExprBase {
- // Token op, Expr.ExprBase right
-    constructor (op, right) {
+    // Token op, Expr.ExprBase right
+    constructor(op, right) {
         super();
         this.op = op;
         this.right = right;
@@ -33,8 +33,8 @@ export class Unary extends ExprBase {
 }
 
 export class Literal extends ExprBase {
- // Token token
-    constructor (token) {
+    // Token token
+    constructor(token) {
         super();
         this.token = token;
     }
@@ -45,8 +45,8 @@ export class Literal extends ExprBase {
 }
 
 export class Grouping extends ExprBase {
- // Expr.ExprBase expr
-    constructor (expr) {
+    // Expr.ExprBase expr
+    constructor(expr) {
         super();
         this.expr = expr;
     }
@@ -57,8 +57,8 @@ export class Grouping extends ExprBase {
 }
 
 export class Member extends ExprBase {
- // Expr.ExprBase main, Expr.Identifier member
-    constructor (main, member) {
+    // Expr.ExprBase main, Expr.Identifier member
+    constructor(main, member) {
         super();
         this.main = main;
         this.member = member;
@@ -70,8 +70,8 @@ export class Member extends ExprBase {
 }
 
 export class Identifier extends ExprBase {
- // Token token
-    constructor (token) {
+    // Token token
+    constructor(token) {
         super();
         this.token = token;
     }
@@ -82,8 +82,8 @@ export class Identifier extends ExprBase {
 }
 
 export class Lambda extends ExprBase {
- // Array<Stmt.Types-Token> params, Stmt.Type returnType, Stmt.Block block
-    constructor (params, returnType, block) {
+    // Array<Stmt.Types-Token> params, Stmt.Type returnType, Stmt.Block block
+    constructor(params, returnType, block) {
         super();
         this.params = params;
         this.returnType = returnType;
@@ -96,8 +96,8 @@ export class Lambda extends ExprBase {
 }
 
 export class Call extends ExprBase {
- // Expr.ExprBase callable, Expr.ExprBase args
-    constructor (callable, args) {
+    // Expr.ExprBase callable, Expr.ExprBase args
+    constructor(callable, args) {
         super();
         this.callable = callable;
         this.args = args;
@@ -109,8 +109,8 @@ export class Call extends ExprBase {
 }
 
 export class Array extends ExprBase {
- // Array<Expr.ExprBase> contents
-    constructor (contents) {
+    // Array<Expr.ExprBase> contents
+    constructor(contents) {
         super();
         this.contents = contents;
     }
@@ -121,8 +121,8 @@ export class Array extends ExprBase {
 }
 
 export class Index extends ExprBase {
- // Expr.ExprBase iterable, Expr.ExprBase index
-    constructor (iterable, index) {
+    // Expr.ExprBase iterable, Expr.ExprBase index
+    constructor(iterable, index) {
         super();
         this.iterable = iterable;
         this.index = index;
