@@ -9,7 +9,7 @@ class SimplError extends Error {
         super(message, line);
         this.output = output;
     }
-}class SimplErrorStruktur extends SimplError {}class SimplErrorTulisan extends SimplError {}
+}class SimplErrorStruktur extends SimplError { }class SimplErrorTulisan extends SimplError { }
 
 // Environment defines a scope for all data to live in
 class Environment {
@@ -50,23 +50,23 @@ class Environment {
 }
 
 const RESERVED_KEYWORDS = [
-    "rubah", 
-    "kalau", 
-    "namun", 
-    "slagi", 
-    "untuk", 
-    "cetak", 
-    "henti", 
-    "lewat", 
-    "dalam", 
-    "hasil", 
-    "kerja", 
-    "datum", 
-    "jenis", 
-    "model", 
-    "error", 
-    "tetap", 
-    "modul", 
+    "rubah",
+    "kalau",
+    "namun",
+    "slagi",
+    "untuk",
+    "cetak",
+    "henti",
+    "lewat",
+    "dalam",
+    "hasil",
+    "kerja",
+    "datum",
+    "jenis",
+    "model",
+    "error",
+    "tetap",
+    "modul",
 ];
 
 const RUBAH = 0,
@@ -114,23 +114,23 @@ const RUBAH = 0,
     MODULUS = 43;
 
 const TOKEN_STRING = [
-    "RUBAH", 
-    "KALAU", 
-    "NAMUN", 
-    "SLAGI", 
-    "UNTUK", 
-    "CETAK", 
-    "HENTI", 
-    "LEWAT", 
-    "DALAM", 
-    "HASIL", 
-    "KERJA", 
-    "DATUM", 
-    "JENIS", 
-    "MODEL", 
-    "ERROR", 
-    "TETAP", 
-    "MODUL", 
+    "RUBAH",
+    "KALAU",
+    "NAMUN",
+    "SLAGI",
+    "UNTUK",
+    "CETAK",
+    "HENTI",
+    "LEWAT",
+    "DALAM",
+    "HASIL",
+    "KERJA",
+    "DATUM",
+    "JENIS",
+    "MODEL",
+    "ERROR",
+    "TETAP",
+    "MODUL",
     "EOF",
     "ID",
     "LITERAL",
@@ -165,17 +165,18 @@ const RESERVED_NAMES = [
 ];
 
 const petikSymbol = Symbol("petik"),
-             angkaSymbol = Symbol("angka"),
-             logisSymbol = Symbol("logis"),
-             mesinSymbol = Symbol("mesin"),
-             barisSymbol = Symbol("baris"),
-             stipeSymbol = Symbol("stipe"),
-             modulSymbol = Symbol("modul");
+    angkaSymbol = Symbol("angka"),
+    logisSymbol = Symbol("logis"),
+    mesinSymbol = Symbol("mesin"),
+    barisSymbol = Symbol("baris"),
+    stipeSymbol = Symbol("stipe"),
+    modulSymbol = Symbol("modul");
 
 class Value {
     constructor(type, data) {
         this.type = type;
         this.data = data;
+        this.member = null;
     }
 }
 
@@ -215,69 +216,69 @@ class Stipe extends Variable {
 
 class PetikTipe extends Stipe {
     constructor() {
-        super(petikSymbol, new Callable(null, (v,args) => {
-          const kePetik = (thing) => {
-            if (thing.type === logisSymbol) {
-              return thing.data ? "benar" : "salah";
-            } else if (thing.type === barisSymbol) {
-              return '[' + thing.data.reduce((str, val)=>str+", "+kePetik(val), "").slice(1) + ' ]';
-            } else if (thing.type === stipeSymbol) {
-              return `Model<${thing.symbol.description}>`;
-            } else if (thing.type === mesinSymbol) {
-              let underlying = thing.data.returnType?.description;
-              return `Mesin<${underlying? underlying : 'datum'}>`;
-            } else if (thing.type === angkaSymbol) {
-              return thing.data.toString();
-            } else if (thing.type === petikSymbol) {
-              return '"' + thing.data + '"';
-            } else {
-              if (!thing?.type) return `nihil`;
-              let type = v.environment.get(thing.type.description);
-              if (type?.member.has("kePetik")) {
-                v.stack.push(v.line);
-                let res = v.callFunc(type.member.get("kePetik").data, [thing]).data;
-                v.stack.pop();
-                return res;
-              }
-              return `${thing.type.description}<>`;
-            }
-          };
-          return new Value(petikSymbol, kePetik(args[0]));
-        },  [[null]], petikSymbol, true)
+        super(petikSymbol, new Callable(null, (v, args) => {
+            const kePetik = (thing) => {
+                if (thing.type === logisSymbol) {
+                    return thing.data ? "benar" : "salah";
+                } else if (thing.type === barisSymbol) {
+                    return '[' + thing.data.reduce((str, val) => str + ", " + kePetik(val), "").slice(1) + ' ]';
+                } else if (thing.type === stipeSymbol) {
+                    return `Model<${thing.symbol.description}>`;
+                } else if (thing.type === mesinSymbol) {
+                    let underlying = thing.data.returnType?.description;
+                    return `Mesin<${underlying ? underlying : 'datum'}>`;
+                } else if (thing.type === angkaSymbol) {
+                    return thing.data.toString();
+                } else if (thing.type === petikSymbol) {
+                    return '"' + thing.data + '"';
+                } else {
+                    if (!thing?.type) return `nihil`;
+                    let type = v.environment.get(thing.type.description);
+                    if (type?.member.has("kePetik")) {
+                        v.stack.push(v.line);
+                        let res = v.callFunc(type.member.get("kePetik").data, [thing]).data;
+                        v.stack.pop();
+                        return res;
+                    }
+                    return `${thing.type.description}<>`;
+                }
+            };
+            return new Value(petikSymbol, kePetik(args[0]));
+        }, [[null]], petikSymbol, true)
         );
         this.init();
     }
 
     init() {
         // BINARY / UNARY OPERATORS
-        this.operators.define("PLUS", 
-            makeBuiltInFunc([petikSymbol, petikSymbol], petikSymbol, (_, [r, l]) => new Value(petikSymbol, l.data+r.data)));
-        this.operators.define("LEBIH", 
-            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data>r.data)));
-        this.operators.define("KURANG", 
-            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data<r.data)));
-        this.operators.define("SAMA_SAMA", 
-            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data===r.data)));
+        this.operators.define("PLUS",
+            makeBuiltInFunc([petikSymbol, petikSymbol], petikSymbol, (_, [r, l]) => new Value(petikSymbol, l.data + r.data)));
+        this.operators.define("LEBIH",
+            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data > r.data)));
+        this.operators.define("KURANG",
+            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data < r.data)));
+        this.operators.define("SAMA_SAMA",
+            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data === r.data)));
         this.operators.define("LEBIH_SAMA",
-            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data>=r.data)));
+            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data >= r.data)));
         this.operators.define("KURANG_SAMA",
-            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data<=r.data)));
+            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data <= r.data)));
         this.operators.define("SERU_SAMA",
-            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data!==r.data)));
+            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data !== r.data)));
         this.operators.define("AMPERSAN",
-            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data&&r.data)));
+            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data && r.data)));
         this.operators.define("PIPA",
-            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data||r.data)));
+            makeBuiltInFunc([petikSymbol, petikSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data || r.data)));
 
         this.operators.define("SERU_UNARY",
             makeBuiltInFunc([petikSymbol], logisSymbol, (_, [r]) => new Value(logisSymbol, !Boolean(r.data))));
 
         this.member = new Environment();
 
-        this.member.define("pisah", makeBuiltInFunc([petikSymbol, petikSymbol], barisSymbol, (_, [d, sep])=>{
-            return new Value(barisSymbol, d.data.split(sep.data).map(val=>new Value(petikSymbol, val)));
+        this.member.define("pisah", makeBuiltInFunc([petikSymbol, petikSymbol], barisSymbol, (_, [d, sep]) => {
+            return new Value(barisSymbol, d.data.split(sep.data).map(val => new Value(petikSymbol, val)));
         }));
-        this.member.define("bersih", makeBuiltInFunc([petikSymbol], petikSymbol, (_, [d])=> {
+        this.member.define("bersih", makeBuiltInFunc([petikSymbol], petikSymbol, (_, [d]) => {
             return new Value(petikSymbol, d.data.trim())
         }));
         this.member.define("ganti", makeBuiltInFunc([petikSymbol, petikSymbol, petikSymbol], petikSymbol,
@@ -295,57 +296,57 @@ class PetikTipe extends Stipe {
 class AngkaTipe extends Stipe {
     constructor() {
         super(angkaSymbol, new Callable(null, (v, args) => {
-          if (typeof args[0].data === "number") {
-            return new Value(angkaSymbol, args[0].data);
-          }
+            if (typeof args[0].data === "number") {
+                return new Value(angkaSymbol, args[0].data);
+            }
 
-          switch (args[0].type) {
-            case petikSymbol:
-              if (isNaN(Number(args[0].data))) {
-                v.error("Nilai dari petik bukanlah sebuah angka, konversi gagal.");
-              }
-              return new Value(angkaSymbol, Number(args[0].data));
-            case angkaSymbol:
-              return new Value(angkaSymbol, args[0].data);
-            case logisSymbol:
-              return new Value(angkaSymbol, Number(args[0].data));
-            default:
-              v.error(`Tipe yang dapat diterima hanyalah petik, angka, logis, dan jenis. Mendapatkan ${args[0].type.description}.`);
-              return;
-          }
+            switch (args[0].type) {
+                case petikSymbol:
+                    if (isNaN(Number(args[0].data))) {
+                        v.error("Nilai dari petik bukanlah sebuah angka, konversi gagal.");
+                    }
+                    return new Value(angkaSymbol, Number(args[0].data));
+                case angkaSymbol:
+                    return new Value(angkaSymbol, args[0].data);
+                case logisSymbol:
+                    return new Value(angkaSymbol, Number(args[0].data));
+                default:
+                    v.error(`Tipe yang dapat diterima hanyalah petik, angka, logis, dan jenis. Mendapatkan ${args[0].type.description}.`);
+                    return;
+            }
         }, [[null]], angkaSymbol, true)
         );
         this.init();
     }
 
     init() {
-        this.operators.define("PLUS", 
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (_, [r, l]) => new Value(angkaSymbol, l.data+r.data)));
+        this.operators.define("PLUS",
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (_, [r, l]) => new Value(angkaSymbol, l.data + r.data)));
         this.operators.define("MINUS",
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (_, [r, l]) => new Value(angkaSymbol, l.data-r.data)));
-        this.operators.define("BINTANG",  
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (_, [r, l]) => new Value(angkaSymbol, l.data*r.data)));
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (_, [r, l]) => new Value(angkaSymbol, l.data - r.data)));
+        this.operators.define("BINTANG",
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (_, [r, l]) => new Value(angkaSymbol, l.data * r.data)));
         this.operators.define("GARIS_MIRING",
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (_, [r, l]) => new Value(angkaSymbol, l.data/r.data)));
-        this.operators.define("MODULUS", 
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (_, [r, l]) => new Value(angkaSymbol, l.data%r.data)));
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (_, [r, l]) => new Value(angkaSymbol, l.data / r.data)));
+        this.operators.define("MODULUS",
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (_, [r, l]) => new Value(angkaSymbol, l.data % r.data)));
 
-        this.operators.define("LEBIH", 
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data>r.data)));
-        this.operators.define("KURANG", 
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data<r.data)));
-        this.operators.define("SAMA_SAMA", 
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data===r.data)));
+        this.operators.define("LEBIH",
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data > r.data)));
+        this.operators.define("KURANG",
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data < r.data)));
+        this.operators.define("SAMA_SAMA",
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data === r.data)));
         this.operators.define("LEBIH_SAMA",
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data>=r.data)));
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data >= r.data)));
         this.operators.define("KURANG_SAMA",
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data<=r.data)));
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data <= r.data)));
         this.operators.define("SERU_SAMA",
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data!==r.data)));
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data !== r.data)));
         this.operators.define("AMPERSAN",
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data&&r.data)));
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data && r.data)));
         this.operators.define("PIPA",
-            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data||r.data)));
+            makeBuiltInFunc([angkaSymbol, angkaSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data || r.data)));
         this.operators.define("SERU_UNARY",
             makeBuiltInFunc([angkaSymbol], logisSymbol, (_, [r]) => new Value(logisSymbol, !Boolean(r.data))));
         this.operators.define("PLUS_UNARY",
@@ -370,24 +371,24 @@ class AngkaTipe extends Stipe {
 class LogisTipe extends Stipe {
     constructor() {
         super(logisSymbol, new Callable(null, (_, args) => {
-                return new Value(logisSymbol, Boolean(args[0].data) || Boolean(args[0].data.member));
-            }, [[null]], logisSymbol, true)
+            return new Value(logisSymbol, Boolean(args[0].data) || Boolean(args[0].data.member));
+        }, [[null]], logisSymbol, true)
         );
         this.init();
     }
 
     init() {
-        this.operators.define("SAMA_SAMA", 
-            makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data===r.data)));
+        this.operators.define("SAMA_SAMA",
+            makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data === r.data)));
         this.operators.define("SERU_SAMA",
-            makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data!==r.data)));
+            makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data !== r.data)));
         this.operators.define("AMPERSAN",
-            makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data&&r.data)));
+            makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data && r.data)));
         this.operators.define("PIPA",
-            makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data||r.data)));
+            makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data || r.data)));
         this.operators.define("SERU_UNARY",
             makeBuiltInFunc([logisSymbol], logisSymbol, (_, [r]) => new Value(logisSymbol, !Boolean(r.data))));
-        
+
         this.member = new Environment();
     }
 }
@@ -398,41 +399,41 @@ class BarisTipe extends Stipe {
         this.init();
     }
 
-    init () {
-        this.operators.define("PLUS", 
-            makeBuiltInFunc([barisSymbol, barisSymbol], barisSymbol, (_, [r,l]) => 
+    init() {
+        this.operators.define("PLUS",
+            makeBuiltInFunc([barisSymbol, barisSymbol], barisSymbol, (_, [r, l]) =>
                 new Value(barisSymbol, Array(...l.data, ...r.data))
             ));
 
         this.operators.define("MINUS_UNARY",
             makeBuiltInFunc([barisSymbol], barisSymbol, (_, [r]) =>
-                new Value(barisSymbol, r.data.slice(0,r.length))
+                new Value(barisSymbol, r.data.slice(0, r.length))
             ));
 
         this.operators.define("SAMA_SAMA",
-            makeBuiltInFunc([barisSymbol, barisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, ((a,b)=>{
+            makeBuiltInFunc([barisSymbol, barisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, ((a, b) => {
                 if (a.length !== b.length) return false;
                 for (let i = 0; i < a.length; i++) {
                     if (a[i].data !== b[i].data) return false;
                 }
                 return true;
-            })(l.data,r.data)))
+            })(l.data, r.data)))
         );
 
-        this.operators.define("SERU_SAMA", 
-            makeBuiltInFunc([barisSymbol, barisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, ((a,b)=>{
+        this.operators.define("SERU_SAMA",
+            makeBuiltInFunc([barisSymbol, barisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, ((a, b) => {
                 if (a.length !== b.length) return true;
                 for (let i = 0; i < a.length; i++) {
                     if (a[i].data !== b[i].data) return true;
                 }
                 return false;
-            })(l.data,r.data)))
+            })(l.data, r.data)))
         );
 
         this.operators.define("AMPERSAN",
-            makeBuiltInFunc([barisSymbol, barisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data&&r.data)));
+            makeBuiltInFunc([barisSymbol, barisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data && r.data)));
         this.operators.define("PIPA",
-            makeBuiltInFunc([barisSymbol, barisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data||r.data)));
+            makeBuiltInFunc([barisSymbol, barisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data || r.data)));
         this.operators.define("SERU_UNARY",
             makeBuiltInFunc([barisSymbol], logisSymbol, (_, [r]) => new Value(logisSymbol, !Boolean(r.data))));
 
@@ -453,18 +454,18 @@ class BarisTipe extends Stipe {
                 v.error(`Indeks tidak valid, ${fr.data}:${to.data}, dengan ukuran baris ${b.data.length}`);
             }
             return new Value(barisSymbol, b.data.slice(fr.data, to.data));
-      }));
-        this.member.define("tumpuk", makeBuiltInFunc([barisSymbol, null], null, (_, [b, d])=>{
+        }));
+        this.member.define("tumpuk", makeBuiltInFunc([barisSymbol, null], null, (_, [b, d]) => {
             b.data.push(d);
             return b;
         }));
-        this.member.define("tumpah", makeBuiltInFunc([barisSymbol], null, (_, [b])=>{
+        this.member.define("tumpah", makeBuiltInFunc([barisSymbol], null, (_, [b]) => {
             b.data.pop();
             return b;
         }));
         this.member.define("masuk", makeBuiltInFunc([barisSymbol, null, angkaSymbol], null, (v, [b, d, idx]) => {
             if (idx.data > b.data.length) {
-              v.error(`Indeks tidak valid, ${idx.data}, dengan ukuran baris ${b.data.length}`);
+                v.error(`Indeks tidak valid, ${idx.data}, dengan ukuran baris ${b.data.length}`);
             }
             b.data.splice(idx.data, 0, d);
             return b;
@@ -503,31 +504,31 @@ class MesinTipe extends Stipe {
         this.member = new Environment();
     }
 }
- 
+
 let Model$1 = class Model extends Stipe {
     constructor(name, params) {
         let sym = Symbol(name);
         super(sym, new Callable(null, (v, args) => {
 
-                let obj = new Value(sym, true);
-                obj.member = new Environment();
+            let obj = new Value(sym, true);
+            obj.member = new Environment();
 
-                for (let i = 0; i < args.length; i++) {
-                    let type = params[i][0];
-                    let symbol = type.accept(v);
-                    let name = params[i][1].lexeme;
-                    
-                    let val = new Variable(symbol, type.tetap, args[i].data);
-                    if (args[i].data === null) ; else if (symbol === null) {
-                        val.isDatum = true;
-                        val.type = args[i].type;
-                    }
-                    val.member = args[i].member;
-                    obj.member.define(name, val);
+            for (let i = 0; i < args.length; i++) {
+                let type = params[i][0];
+                let symbol = type.accept(v);
+                let name = params[i][1].lexeme;
+
+                let val = new Variable(symbol, type.tetap, args[i].data);
+                if (args[i].data === null) ; else if (symbol === null) {
+                    val.isDatum = true;
+                    val.type = args[i].type;
                 }
+                val.member = args[i].member;
+                obj.member.define(name, val);
+            }
 
-                return obj;
-            },  params.map(_=>[null]), sym, true)
+            return obj;
+        }, params.map(_ => [null]), sym, true)
         );
     }
 };
@@ -544,15 +545,15 @@ let Jenis$1 = class Jenis extends Stipe {
     }
 
     init(sym) {
-        this.operators.define("SAMA_SAMA", 
-            makeBuiltInFunc([sym, sym], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data===r.data)));
+        this.operators.define("SAMA_SAMA",
+            makeBuiltInFunc([sym, sym], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data === r.data)));
         this.operators.define("SERU_SAMA",
-            makeBuiltInFunc([sym, sym], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data!==r.data)));
+            makeBuiltInFunc([sym, sym], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data !== r.data)));
     }
 };
 
 class Callable {
-    constructor(enclosing, block, parameters, returnType, isBuiltIn=false) {
+    constructor(enclosing, block, parameters, returnType, isBuiltIn = false) {
         this.closure = enclosing;
         this.block = block;
         this.parameters = parameters;
@@ -562,18 +563,18 @@ class Callable {
 }
 
 function makeBuiltInFunc(parameters, returnType, funcBody) {
-    let lambda = new Callable(null, funcBody, parameters.map((val)=>[val]), returnType, true);
+    let lambda = new Callable(null, funcBody, parameters.map((val) => [val]), returnType, true);
     let variable = new Variable(mesinSymbol, true, lambda);
     return variable;
 }
 
 function copier(thing) {
-    switch(thing.type) {
+    switch (thing.type) {
         case petikSymbol: return new Value(petikSymbol, thing.data);
         case angkaSymbol: return new Value(angkaSymbol, thing.data);
         case logisSymbol: return new Value(logisSymbol, thing.data);
         case mesinSymbol: return new Value(mesinSymbol, thing.data);
-        case barisSymbol: return new Value(barisSymbol, thing.data.map((val)=>copier(val)));
+        case barisSymbol: return new Value(barisSymbol, thing.data.map((val) => copier(val)));
         case stipeSymbol: return NIHIL;
         case modulSymbol: return NIHIL;
         default:
@@ -593,7 +594,7 @@ function copier(thing) {
 }
 
 
-const GLOBAL_ENV = (() => { 
+const GLOBAL_ENV = (() => {
     let env = new Environment();
     env.define("petik", new PetikTipe());
     env.define("angka", new AngkaTipe());
@@ -601,31 +602,31 @@ const GLOBAL_ENV = (() => {
     env.define("baris", new BarisTipe());
     env.define("mesin", new MesinTipe());
 
-    env.define("jarak", makeBuiltInFunc([angkaSymbol, angkaSymbol], barisSymbol, 
-        (_, [from, to])=>new Value(barisSymbol, 
-            Array(Math.abs(Math.floor(to.data-from.data)))
+    env.define("jarak", makeBuiltInFunc([angkaSymbol, angkaSymbol], barisSymbol,
+        (_, [from, to]) => new Value(barisSymbol,
+            Array(Math.abs(Math.floor(to.data - from.data)))
                 .fill(0)
-                .map((_, idx)=>new Value(angkaSymbol, from.data+((to.data>from.data)?1:-1)*idx))))
+                .map((_, idx) => new Value(angkaSymbol, from.data + ((to.data > from.data) ? 1 : -1) * idx))))
     );
 
     env.define("nihil?", makeBuiltInFunc([null], logisSymbol, (_, [d]) => new Value(logisSymbol, d.data === null)));
-    env.define("ukuran", makeBuiltInFunc([null], angkaSymbol,(_, [d]) => d.type === barisSymbol || d.type === petikSymbol 
+    env.define("ukuran", makeBuiltInFunc([null], angkaSymbol, (_, [d]) => d.type === barisSymbol || d.type === petikSymbol
         ? new Value(angkaSymbol, d.data.length)
         : v.error(`Ukuran hanya terdapat untuk tipe petik atau baris. Menemukan tipe ${d.type.description}.`)
     ));
 
     env.define("salin", makeBuiltInFunc([null], null, (_, [d]) => copier(d)));
-    env.define("tipe", makeBuiltInFunc([null], petikSymbol, (_, [d]) => (d.type?.description) 
+    env.define("tipe", makeBuiltInFunc([null], petikSymbol, (_, [d]) => (d.type?.description)
         ? new Value(petikSymbol, d.type.description)
         : new Value(petikSymbol, "datum")
     ));
 
     let mtkModul = new Variable(modulSymbol, true, null);
     mtkModul.member = new Environment();
-    mtkModul.member.define("acak", makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (_, [a,b]) => {
-        let width = Math.abs(a.data-b.data);
+    mtkModul.member.define("acak", makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (_, [a, b]) => {
+        let width = Math.abs(a.data - b.data);
         let range = Math.random() * width;
-        let final = range + Math.min(a.data,b.data);
+        let final = range + Math.min(a.data, b.data);
         return new Value(angkaSymbol, final);
     }));
     mtkModul.member.define("akar2", makeBuiltInFunc([angkaSymbol], angkaSymbol, (_, [a]) => {
@@ -636,8 +637,8 @@ const GLOBAL_ENV = (() => {
     return env;
 })();
 
-let Henti$1 = class Henti {};
-let Lewat$1 = class Lewat {};
+let Henti$1 = class Henti { };
+let Lewat$1 = class Lewat { };
 let Hasil$1 = class Hasil {
     constructor(value) {
         this.value = value;
@@ -650,7 +651,6 @@ const location = {
     UNTUK: 3,
     MESIN: 4,
 };
-const MAX_LOOP_ALLOWED = 1000000;
 const MAX_STACK_SIZE = 500;
 
 // Implements all Expressions and Statements Visitor
@@ -672,15 +672,15 @@ class Interpreter {
     visitLiteralExpr(literalExpr) {
         let lit = literalExpr.token;
         this.line = lit.line;
-        switch(typeof lit.value) {
-            case "string": 
+        switch (typeof lit.value) {
+            case "string":
                 return new Value(petikSymbol, lit.value);
-            case "number": 
+            case "number":
                 return new Value(angkaSymbol, lit.value);
             case "boolean":
                 return new Value(logisSymbol, lit.value);
             default:
-                return new NIHIL;
+                return NIHIL;
         }
     }
 
@@ -688,7 +688,7 @@ class Interpreter {
         let value = new Value(barisSymbol, []);
 
         for (let expr of arrayExpr.contents) {
-            let v = this.validvalue(expr.accept(this));
+            let v = this.validValue(expr.accept(this));
             value.data.push(v);
         }
 
@@ -699,7 +699,7 @@ class Interpreter {
         // a real TODO would've been to implement real iterables
         let iterable = indexExpr.iterable.accept(this);
         if (iterable.type === petikSymbol) {
-            iterable = new Value(barisSymbol, iterable.data.split("").map(str=>new Value(petikSymbol, str)));
+            iterable = new Value(barisSymbol, iterable.data.split("").map(str => new Value(petikSymbol, str)));
         }
         if (iterable.type !== barisSymbol) {
             this.error(`'${iterable.type.description}' bukan baris/petik, tidak bisa di-indeks`);
@@ -720,7 +720,7 @@ class Interpreter {
 
     visitLambdaExpr(lambdaExpr) {
         // let type = lambdaExpr.returnValue.accept(this);
-        let params = lambdaExpr.params.map(val=>[val[0].accept(this), val[0].tetap, val[1].lexeme]);
+        let params = lambdaExpr.params.map(val => [val[0].accept(this), val[0].tetap, val[1].lexeme]);
 
         const check_duplicate_name = (p) => {
             let mapped = new Map();
@@ -731,10 +731,10 @@ class Interpreter {
             return false;
         };
 
-        if (params.length > 1 
-            && check_duplicate_name(params.map(p=>p[2])) ){
-                this.error("Parameter mesin tidak boleh mempunyai nama yang sama.");
-            }
+        if (params.length > 1
+            && check_duplicate_name(params.map(p => p[2]))) {
+            this.error("Parameter mesin tidak boleh mempunyai nama yang sama.");
+        }
         let retType = null;
         if (lambdaExpr.returnType) {
             retType = lambdaExpr.returnType.accept(this);
@@ -748,7 +748,7 @@ class Interpreter {
         this.exprWillBeCalled = true;
         let callable = callExpr.callable.accept(this);
         this.exprWillBeCalled = false;
-        
+
         if (callable.type !== mesinSymbol && callable.type !== stipeSymbol) {
             this.error(`Hanya bisa 'memanggil' mesin atau model, malah menemukan ${callable.type.description}. `);
         }
@@ -756,15 +756,15 @@ class Interpreter {
         if (!callable.data?.block) {
             this.error(`Mesin tidak terdefinisi, tidak bisa dipanggil.`);
         }
-        
+
         let args = [];
 
         if (this.objectStack) {
-           args = [this.objectStack]; 
-           this.objectStack = null;
+            args = [this.objectStack];
+            this.objectStack = null;
         }
 
-        args = [...args, ...callExpr.args.map(val=>this.validvalue(val.accept(this)))];
+        args = [...args, ...callExpr.args.map(val => this.validValue(val.accept(this)))];
 
         let result = this.callFunc(callable.data, args);
         return result;
@@ -775,22 +775,23 @@ class Interpreter {
         //     console.log(idx, val);
         // });
         this.stack.push(this.line);
-        if (this.stack.length > MAX_STACK_SIZE) 
+        if (this.stack.length > MAX_STACK_SIZE)
             this.error(`Rekursi melebihi batas: Lebih dari ${MAX_STACK_SIZE}`);
 
-        this.line = this.stack[this.stack.length-1];
+        let prevState = this.state;
+        this.line = this.stack[this.stack.length - 1];
         this.state = location.MESIN;
 
         if (args.length !== callable.parameters.length) {
             this.error(`Jumlah argumen tidak sama dengan parameter mesin. Menemukan ${args.length}, harusnya ${callable.parameters.length}.`);
         }
-        
+
         // for asserting _call_ error.
         let callLineNum = this.line;
 
-        for(let i = 0; i < args.length; i++) {
+        for (let i = 0; i < args.length; i++) {
             let type = callable.parameters[i][0];
-            
+
             if (type === null) continue;
             if (args[i].type !== type) {
                 this.line = callLineNum;
@@ -800,27 +801,27 @@ class Interpreter {
 
         if (callable.isBuiltIn) {
             this.stack.pop();
-            if (this.stack.length == 0) this.state = location.GLOBAL;
+            this.state = prevState;
             return callable.block(this, args);
-        } 
+        }
 
         let visitorEnv = this.environment;
         let funcEnv = new Environment(callable.closure);
         this.environment = funcEnv;
 
-        for(let i = 0; i < args.length; i++) {
+        for (let i = 0; i < args.length; i++) {
             let [type, tetap, name] = callable.parameters[i];
             if (type === null) {
                 type = args[i].type;
             }
             let variable = new Variable(type, tetap, args[i].data);
             variable.member = args[i].member;
-            
+
             this.environment.define(name, variable);
         }
 
         let result = NIHIL;
-        for(let stmt of callable.block.statements) {
+        for (let stmt of callable.block.statements) {
             try {
                 stmt.accept(this);
             } catch (err) {
@@ -833,15 +834,15 @@ class Interpreter {
             }
         }
         this.stack.pop();
-        if (this.stack.length == 0) this.state = location.GLOBAL;
+        this.state = prevState;
         this.environment = visitorEnv;
         return result;
     }
 
 
     visitBinaryExpr(binaryExpr) {
-        let leftValue = this.validvalue(binaryExpr.left.accept(this));
-        let rightValue = this.validvalue(binaryExpr.right.accept(this));
+        let leftValue = this.validValue(binaryExpr.left.accept(this));
+        let rightValue = this.validValue(binaryExpr.right.accept(this));
 
         this.line = binaryExpr.op.line;
 
@@ -858,7 +859,7 @@ class Interpreter {
     }
 
     visitUnaryExpr(unaryExpr) {
-        let rightValue = this.validvalue(unaryExpr.right.accept(this));
+        let rightValue = this.validValue(unaryExpr.right.accept(this));
 
         this.line = unaryExpr.op.line;
 
@@ -867,18 +868,18 @@ class Interpreter {
             this.error(`Tidak bisa mengoperasikan nilai Nihil.`);
         }
 
-         let result = this.environment.get(rightValue.type.description) // get Model
+        let result = this.environment.get(rightValue.type.description) // get Model
             .operate(this, unaryExpr.op.type, rightValue); // dispatch the operation
 
         return result;
     }
 
     visitGroupingExpr(groupingExpr) {
-        return groupingExpr.expr.accept(this);
+        return this.validValue(groupingExpr.expr.accept(this));
     }
 
     visitIdentifierExpr(identifierExpr) {
-        let value =  this.environment.get(identifierExpr.token.lexeme);
+        let value = this.environment.get(identifierExpr.token.lexeme);
         this.line = identifierExpr.token.line;
         if (!value) this.error(`'${identifierExpr.token.lexeme}' tidak dapat ditemukan.`);
         return value;
@@ -894,7 +895,7 @@ class Interpreter {
             const type = this.environment.get(main.type.description);
             if (type.member?.has(name)) {
                 if (willBeCalled) {
-                  this.objectStack = main;
+                    this.objectStack = main;
                 }
                 return type.member.get(name);
             }
@@ -909,7 +910,7 @@ class Interpreter {
     // this is needed for interpreting generics TODO!
     visitTypeStmt(typeStmt) {
         if (typeStmt.type === null) return null;
-        let type =  typeStmt.type.accept(this);
+        let type = typeStmt.type.accept(this);
         if (type.type !== stipeSymbol) this.error(`'${type.type.description}' bukan sebuah Model/Tipe Valid.`);
         return type.symbol;
     }
@@ -920,15 +921,15 @@ class Interpreter {
             if (thing.type === logisSymbol) {
                 return thing.data ? "benar" : "salah";
             } else if (thing.type === barisSymbol) {
-                return '[' + thing.data.reduce((str, val)=>{
-                  let item = kePetik(val);
-                  return str + ", " + (val.type === petikSymbol ? `"${item}"` : item);
+                return '[' + thing.data.reduce((str, val) => {
+                    let item = kePetik(val);
+                    return str + ", " + (val.type === petikSymbol ? `"${item}"` : item);
                 }, "").slice(1) + ' ]';
             } else if (thing.type === stipeSymbol) {
                 return `Model<${thing.symbol.description}>`;
             } else if (thing.type === mesinSymbol) {
                 let underlying = thing.data.returnType?.description;
-                return `Mesin<${underlying? underlying : 'datum'}>`;
+                return `Mesin<${underlying ? underlying : 'datum'}>`;
             } else if (thing.type === angkaSymbol) {
                 return thing.data.toString();
             } else if (thing.type === petikSymbol) {
@@ -937,11 +938,12 @@ class Interpreter {
                 if (!thing?.type) return `nihil`;
                 let type = this.environment.get(thing.type.description);
                 if (type?.member?.has("kePetik")) {
+                    let prevState = this.state;
                     this.state = location.MESIN;
                     this.stack.push(this.line);
                     let res = this.callFunc(type.member.get("kePetik").data, [thing]).data;
                     this.stack.pop();
-                    this.state = this.stack > 0 ? location.MESIN : location.GLOBAL;
+                    this.state = prevState;
                     return res;
                 }
                 return `${thing.type.description}<>`;
@@ -963,7 +965,7 @@ class Interpreter {
 
         let variable = new Variable(type, datumStmt.type.tetap);
 
-        let value = this.validvalue(datumStmt.expr.accept(this));
+        let value = this.validValue(datumStmt.expr.accept(this));
 
         if (value.data === null) value.type = variable.type; // if nihil, ok
 
@@ -972,7 +974,7 @@ class Interpreter {
             variable.type = value.type;
         } else this.typeCheck(variable, value, `Pada pembuatan variabel '${name}'`);
 
-        variable.data = value.data; 
+        variable.data = value.data;
         variable.member = value.member;
 
         this.environment.define(name, variable);
@@ -983,7 +985,7 @@ class Interpreter {
         if (variable.tetap) {
             this.error(`Variabel tetap tidak dapat di-rubah.`);
         }
-        let value = this.validvalue(rubahStmt.value.accept(this));
+        let value = this.validValue(rubahStmt.value.accept(this));
         if (value.data === null) value.type = variable.type; // if nihil, ok
 
         if (variable.isDatum)
@@ -1011,7 +1013,10 @@ class Interpreter {
     visitKalauStmt(kalauStmt) {
         // condition may be null for 'namun', accept the thenBlock if it is
         let condition = kalauStmt.condition?.accept(this);
-        if (condition === null || condition === undefined || condition.data || condition.member) {
+        if (condition.type !== logisSymbol) {
+            this.error(`Ekspresi dalam 'kalau' harus bertipe logis, menemukan ${condition.type ? condition.type.description : "nihil"}`);
+        }
+        if (condition === null || condition === undefined || condition.data) {
             kalauStmt.thenBlock.accept(this);
         } else {
             kalauStmt.elseKalau?.accept(this); // kalau may not have namun
@@ -1019,14 +1024,14 @@ class Interpreter {
     }
 
     visitHentiStmt() {
-        if (this.state !== location.GLOBAL)
+        if (this.state === location.UNTUK || this.state === location.SLAGI)
             throw new Henti$1(); // throws exception to escape from deep recursion
         else this.error("Tidak ada pengulangan untuk dihentikan.");
     }
 
-    
+
     visitLewatStmt() {
-        if (this.state !== location.GLOBAL)
+        if (this.state === location.UNTUK || this.state === location.SLAGI)
             throw new Lewat$1(); // throws exception to escape from deep recursion
         else this.error("Tidak ada pengulangan untuk dilewatkan.");
     }
@@ -1039,18 +1044,19 @@ class Interpreter {
     }
 
     visitSlagiStmt(slagiStmt) {
-        const checkTruthy = (v) => v.data || v.member;
+        const checkTruthy = (v) => {
+            if (v.type !== logisSymbol) {
+                this.error(`Ekspresi dalam 'slagi' harus bertipe 'logis', menemukan ${v.type ? v.type.description : "nihil" }`);
+            }
+            return v.data;
+        };
         let lastEnv = this.environment;
-        let howManyLoop = 0;
         while (checkTruthy(slagiStmt.condition.accept(this))) {
-            howManyLoop++;
-            if (howManyLoop > MAX_LOOP_ALLOWED) 
-                this.error(`Pengulangan melebihi batas: lebih dari ${MAX_LOOP_ALLOWED}.`);
             this.environment = new Environment(lastEnv);
             try {
                 for (let stmt of slagiStmt.block.statements) {
                     this.state = location.SLAGI;
-                    stmt.accept(this); 
+                    stmt.accept(this);
                     this.state = location.SLAGI;
                 }
             } catch (err) {
@@ -1069,10 +1075,10 @@ class Interpreter {
     visitUntukStmt(untukStmt) {
         let name = this.validName(untukStmt.varName.lexeme, false);
         let type = untukStmt.varType.accept(this);
-        
-        let iter = untukStmt.iterable.accept(this);
+
+        let iter = this.validValue(untukStmt.iterable.accept(this));
         if (iter.type === petikSymbol) {
-            iter = new Value(barisSymbol, iter.data.split("").map(str=>new Value(petikSymbol, str)));
+            iter = new Value(barisSymbol, iter.data.split("").map(str => new Value(petikSymbol, str)));
         }
         if (iter.type !== barisSymbol) {
             this.error(`Pernyataan 'untuk' harus mengiterasi sebuah baris atau petik, bukan ${iter.type.description}`);
@@ -1092,7 +1098,7 @@ class Interpreter {
                 // didn't 'accept' the block, just uses it directly
                 for (let stmt of untukStmt.block.statements) {
                     this.state = location.UNTUK;
-                    stmt.accept(this); 
+                    stmt.accept(this);
                     this.state = location.UNTUK;
                 }
             } catch (err) {
@@ -1176,13 +1182,13 @@ class Interpreter {
         return false;
     }
 
-    validvalue(v) {
+    validValue(v) {
         if (v.type !== stipeSymbol) return v;
         this.error("stipe tidak dapat menjadi nilai.");
     }
 
     validName(n, checkExisted = true) {
-        if (RESERVED_NAMES.some(v=>v===n)) {
+        if (RESERVED_NAMES.some(v => v === n)) {
             this.error(`Nama sistem (${n}) tidak boleh didefinisi ulang.`);
         } else if (checkExisted && this.environment.has(n)) {
             this.error(`Variabel dengan nama '${n}' sudah ada. Tidak bisa didefinisi ulang.`);
@@ -1246,7 +1252,7 @@ class Lexer {
     }
 
     peek(num = 1) {
-        return this.isAtEnd() ? null : this.text[this.charIndex+num];
+        return this.isAtEnd() ? null : this.text[this.charIndex + num];
     }
 
     isAlpha(char) {
@@ -1283,23 +1289,23 @@ class Lexer {
             if (token) tokens.push(token);
         }
 
-        tokens.push(new Token(EOF, null, null, this.lineIndex));
+        tokens.push(new Token(EOF, "Akhir dokumen", null, this.lineIndex));
 
         this.tokens = tokens;
         return this.tokens;
     }
 
     id() {
-        while(!this.isAtEnd() && this.isAlphaNumeric(this.see())) this.advance();
-        
+        while (!this.isAtEnd() && this.isAlphaNumeric(this.see())) this.advance();
+
         let lexeme = this.parseLexeme();
 
-        let reservedIndex = RESERVED_KEYWORDS.findIndex((val)=>val===lexeme);
+        let reservedIndex = RESERVED_KEYWORDS.findIndex((val) => val === lexeme);
         if (reservedIndex != -1) {
             return new Token(reservedIndex, lexeme, null, this.lineIndex);
         }
 
-        let isLogis = ["benar", "salah"].some((val)=>val===lexeme);
+        let isLogis = ["benar", "salah"].some((val) => val === lexeme);
         if (isLogis) {
             return new Token(LITERAL, lexeme, "benar" === lexeme ? true : false, this.lineIndex);
         }
@@ -1309,7 +1315,7 @@ class Lexer {
         }
 
         return new Token(
-            ID, 
+            ID,
             lexeme,
             null,
             this.lineIndex
@@ -1318,7 +1324,7 @@ class Lexer {
 
     number() {
         let isFloat = false;
-        while(!this.isAtEnd() && this.isNumeric(this.see())) {
+        while (!this.isAtEnd() && this.isNumeric(this.see())) {
             this.advance();
             if (this.see() === '.') {
                 if (isFloat) break;
@@ -1332,15 +1338,15 @@ class Lexer {
 
     string() {
         this.advance();
-        while(!this.isAtEnd() && this.see() !== '"') this.advance();
+        while (!this.isAtEnd() && this.see() !== '"') this.advance();
         if (this.isAtEnd()) this.error("Petik tidak tertutup.");
         this.advance();
         let lexeme = this.parseLexeme();
-        return new Token(LITERAL, lexeme, lexeme.slice(1, lexeme.length-1), this.lineIndex);
+        return new Token(LITERAL, lexeme, lexeme.slice(1, lexeme.length - 1), this.lineIndex);
     }
 
     comment() {
-        while(!this.isAtEnd() && this.see() !== '\n') {
+        while (!this.isAtEnd() && this.see() !== '\n') {
             this.advance();
             this.charStart++;
         }
@@ -1361,10 +1367,10 @@ class Lexer {
         }
 
 
-        if(this.isAlpha(this.see())) return this.id();
-        if(this.isNumeric(this.see())) return this.number();
+        if (this.isAlpha(this.see())) return this.id();
+        if (this.isNumeric(this.see())) return this.number();
 
-        switch(this.see()) {
+        switch (this.see()) {
             case "+": return this.makeToken(PLUS);
             case "-": return this.makeToken(MINUS);
             case "/": return this.makeToken(SLASH);
@@ -1380,27 +1386,27 @@ class Lexer {
             case "|": return this.makeToken(PIPE);
             case "&": return this.makeToken(AMPERSAND);
             case "%": return this.makeToken(MODULUS);
-            case "!": 
+            case "!":
                 if (this.peek() === "=") {
                     this.advance();
                     return this.makeToken(BANG_EQUAL);
                 }
                 return this.makeToken(BANG);
 
-            case ">": 
+            case ">":
                 if (this.peek() === "=") {
                     this.advance();
-                    return this.makeToken(GREATER_EQUAL)                    
+                    return this.makeToken(GREATER_EQUAL)
                 }
                 return this.makeToken(GREATER);
-            case "<": 
+            case "<":
                 if (this.peek() === "=") {
                     this.advance();
                     return this.makeToken(LESS_EQUAL)
                 }
                 return this.makeToken(LESS);
 
-            case "=": 
+            case "=":
                 if (this.peek() === "=" && this.peek(2) === ">") {
                     return this.makeToken(EQUAL);
                 } else if (this.peek() === "=") {
@@ -1437,8 +1443,8 @@ class ExprBase {
 }
 
 class Binary extends ExprBase {
- // Expr.ExprBase left, Token op, Expr.ExprBase right
-    constructor (left, op, right) {
+    // Expr.ExprBase left, Token op, Expr.ExprBase right
+    constructor(left, op, right) {
         super();
         this.left = left;
         this.op = op;
@@ -1451,8 +1457,8 @@ class Binary extends ExprBase {
 }
 
 class Unary extends ExprBase {
- // Token op, Expr.ExprBase right
-    constructor (op, right) {
+    // Token op, Expr.ExprBase right
+    constructor(op, right) {
         super();
         this.op = op;
         this.right = right;
@@ -1464,8 +1470,8 @@ class Unary extends ExprBase {
 }
 
 class Literal extends ExprBase {
- // Token token
-    constructor (token) {
+    // Token token
+    constructor(token) {
         super();
         this.token = token;
     }
@@ -1476,8 +1482,8 @@ class Literal extends ExprBase {
 }
 
 class Grouping extends ExprBase {
- // Expr.ExprBase expr
-    constructor (expr) {
+    // Expr.ExprBase expr
+    constructor(expr) {
         super();
         this.expr = expr;
     }
@@ -1488,8 +1494,8 @@ class Grouping extends ExprBase {
 }
 
 class Member extends ExprBase {
- // Expr.ExprBase main, Expr.Identifier member
-    constructor (main, member) {
+    // Expr.ExprBase main, Expr.Identifier member
+    constructor(main, member) {
         super();
         this.main = main;
         this.member = member;
@@ -1501,8 +1507,8 @@ class Member extends ExprBase {
 }
 
 class Identifier extends ExprBase {
- // Token token
-    constructor (token) {
+    // Token token
+    constructor(token) {
         super();
         this.token = token;
     }
@@ -1513,8 +1519,8 @@ class Identifier extends ExprBase {
 }
 
 class Lambda extends ExprBase {
- // Array<Stmt.Types-Token> params, Stmt.Type returnType, Stmt.Block block
-    constructor (params, returnType, block) {
+    // Array<Stmt.Types-Token> params, Stmt.Type returnType, Stmt.Block block
+    constructor(params, returnType, block) {
         super();
         this.params = params;
         this.returnType = returnType;
@@ -1527,8 +1533,8 @@ class Lambda extends ExprBase {
 }
 
 class Call extends ExprBase {
- // Expr.ExprBase callable, Expr.ExprBase args
-    constructor (callable, args) {
+    // Expr.ExprBase callable, Expr.ExprBase args
+    constructor(callable, args) {
         super();
         this.callable = callable;
         this.args = args;
@@ -1540,8 +1546,8 @@ class Call extends ExprBase {
 }
 
 let Array$1 = class Array extends ExprBase {
- // Array<Expr.ExprBase> contents
-    constructor (contents) {
+    // Array<Expr.ExprBase> contents
+    constructor(contents) {
         super();
         this.contents = contents;
     }
@@ -1552,8 +1558,8 @@ let Array$1 = class Array extends ExprBase {
 };
 
 class Index extends ExprBase {
- // Expr.ExprBase iterable, Expr.ExprBase index
-    constructor (iterable, index) {
+    // Expr.ExprBase iterable, Expr.ExprBase index
+    constructor(iterable, index) {
         super();
         this.iterable = iterable;
         this.index = index;
@@ -1571,8 +1577,8 @@ class StmtBase {
 }
 
 class Cetak extends StmtBase {
- // Expr.ExprBase expr
-    constructor (expr) {
+    // Expr.ExprBase expr
+    constructor(expr) {
         super();
         this.expr = expr;
     }
@@ -1583,8 +1589,8 @@ class Cetak extends StmtBase {
 }
 
 class Datum extends StmtBase {
- // Stmt.Type type, Token name, Expr.ExprBase expr
-    constructor (type, name, expr) {
+    // Stmt.Type type, Token name, Expr.ExprBase expr
+    constructor(type, name, expr) {
         super();
         this.type = type;
         this.name = name;
@@ -1597,8 +1603,8 @@ class Datum extends StmtBase {
 }
 
 class Type extends StmtBase {
- // Expr.ExprBase type, bool tetap, Array<Stmt.Type> contents
-    constructor (type, tetap, contents) {
+    // Expr.ExprBase type, bool tetap, Array<Stmt.Type> contents
+    constructor(type, tetap, contents) {
         super();
         this.type = type;
         this.tetap = tetap;
@@ -1611,8 +1617,8 @@ class Type extends StmtBase {
 }
 
 class Kerja extends StmtBase {
- // Expr.ExprBase expr
-    constructor (expr) {
+    // Expr.ExprBase expr
+    constructor(expr) {
         super();
         this.expr = expr;
     }
@@ -1623,8 +1629,8 @@ class Kerja extends StmtBase {
 }
 
 class Block extends StmtBase {
- // Array<Stmt.StmtBase> statements
-    constructor (statements) {
+    // Array<Stmt.StmtBase> statements
+    constructor(statements) {
         super();
         this.statements = statements;
     }
@@ -1635,8 +1641,8 @@ class Block extends StmtBase {
 }
 
 class Kalau extends StmtBase {
- // Expr.ExprBase condition, Stmt.Block thenBlock, Stmt.Kalau elseKalau
-    constructor (condition, thenBlock, elseKalau) {
+    // Expr.ExprBase condition, Stmt.Block thenBlock, Stmt.Kalau elseKalau
+    constructor(condition, thenBlock, elseKalau) {
         super();
         this.condition = condition;
         this.thenBlock = thenBlock;
@@ -1649,8 +1655,8 @@ class Kalau extends StmtBase {
 }
 
 class Untuk extends StmtBase {
- // Stmt.Type varType, Token varName, Expr.Base iterable, Stmt.Block block
-    constructor (varType, varName, iterable, block) {
+    // Stmt.Type varType, Token varName, Expr.Base iterable, Stmt.Block block
+    constructor(varType, varName, iterable, block) {
         super();
         this.varType = varType;
         this.varName = varName;
@@ -1664,8 +1670,8 @@ class Untuk extends StmtBase {
 }
 
 class Slagi extends StmtBase {
- // Expr.ExprBase condition, Stmt.Block block
-    constructor (condition, block) {
+    // Expr.ExprBase condition, Stmt.Block block
+    constructor(condition, block) {
         super();
         this.condition = condition;
         this.block = block;
@@ -1677,7 +1683,7 @@ class Slagi extends StmtBase {
 }
 
 class Henti extends StmtBase {
-    constructor () {
+    constructor() {
         super();
     }
 
@@ -1687,7 +1693,7 @@ class Henti extends StmtBase {
 }
 
 class Lewat extends StmtBase {
-    constructor () {
+    constructor() {
         super();
     }
 
@@ -1697,8 +1703,8 @@ class Lewat extends StmtBase {
 }
 
 class Rubah extends StmtBase {
- // Expr.ExprBase variable, Expr.ExprBase value
-    constructor (variable, value) {
+    // Expr.ExprBase variable, Expr.ExprBase value
+    constructor(variable, value) {
         super();
         this.variable = variable;
         this.value = value;
@@ -1710,8 +1716,8 @@ class Rubah extends StmtBase {
 }
 
 class Hasil extends StmtBase {
- // Expr.ExprBase expr
-    constructor (expr) {
+    // Expr.ExprBase expr
+    constructor(expr) {
         super();
         this.expr = expr;
     }
@@ -1722,8 +1728,8 @@ class Hasil extends StmtBase {
 }
 
 class Jenis extends StmtBase {
- // Token name, Array<Token> enums
-    constructor (name, enums) {
+    // Token name, Array<Token> enums
+    constructor(name, enums) {
         super();
         this.name = name;
         this.enums = enums;
@@ -1735,8 +1741,8 @@ class Jenis extends StmtBase {
 }
 
 class Model extends StmtBase {
- // Token name, Array<Stmt.Type-Token> contents
-    constructor (name, contents) {
+    // Token name, Array<Stmt.Type-Token> contents
+    constructor(name, contents) {
         super();
         this.name = name;
         this.contents = contents;
@@ -1748,8 +1754,8 @@ class Model extends StmtBase {
 }
 
 let Simpl$1 = class Simpl extends StmtBase {
- // Array<Stmt.StmtBase> statements
-    constructor (statements) {
+    // Array<Stmt.StmtBase> statements
+    constructor(statements) {
         super();
         this.statements = statements;
     }
@@ -1760,8 +1766,8 @@ let Simpl$1 = class Simpl extends StmtBase {
 };
 
 class Modul extends StmtBase {
- // Token name, Array<Stmt.StmtBase> statements
-    constructor (name, statements) {
+    // Token name, Array<Stmt.StmtBase> statements
+    constructor(name, statements) {
         super();
         this.name = name;
         this.statements = statements;
@@ -1788,7 +1794,7 @@ class Parser {
     }
 
     peek() {
-        return this.tokenIndex+1 >= this.tokens.length ? null : this.tokens[this.tokenIndex+1];
+        return this.tokenIndex + 1 >= this.tokens.length ? null : this.tokens[this.tokenIndex + 1];
     }
 
     check(type) {
@@ -1800,7 +1806,7 @@ class Parser {
     }
 
     match(...args) {
-        if(this.isAtEnd()) return false;
+        if (this.isAtEnd()) return false;
 
         for (let i of args) {
             if (this.check(i)) {
@@ -1821,8 +1827,8 @@ class Parser {
     }
 
     blockStmt() {
-        let statements= [];
-        while(!this.match(RCURLY)) {
+        let statements = [];
+        while (!this.match(RCURLY)) {
             statements.push(this.statement());
         }
         return new Block(statements);
@@ -1835,7 +1841,7 @@ class Parser {
             do {
                 let expr = this.expression();
                 args.push(expr);
-            } while(this.match(COMMA))
+            } while (this.match(COMMA))
         }
 
         this.eat(RPAREN, "Mengharapkan ')' setelah penggunaan mesin.");
@@ -1852,9 +1858,9 @@ class Parser {
             this.eat(ID, "Mengharapkan Nama parameter setelah deklarasi Tipe parameter dalam Lamda.");
             let name = this.previous();
             params.push([type, name]);
-                
-            while(this.match(COMMA)) {
-                if(!this.match(ID, DATUM))
+
+            while (this.match(COMMA)) {
+                if (!this.match(ID, DATUM))
                     this.error("Mengharapkan Tipe parameter setelah koma dalam Lamda.");
                 let type = this.typeStmt();
                 this.eat(ID, "Mengharapkan Nama parameter setelah deklarasi Tipe parameter dalam Lamda.");
@@ -1899,7 +1905,7 @@ class Parser {
     arrayIndex(iterable) {
         let index = this.expression();
 
-        this.eat(RSQUARE, "Mengharapkan ']' untuk menutup indeks." );
+        this.eat(RSQUARE, "Mengharapkan ']' untuk menutup indeks.");
 
         return new Index(iterable, index);
     }
@@ -1909,7 +1915,7 @@ class Parser {
             let expr = this.expression();
             this.eat(RPAREN, "Mengharapkan ')' untuk mengakhiri ekspresi kurung");
             return new Grouping(expr);
-        } else if (this.match(LITERAL)){
+        } else if (this.match(LITERAL)) {
             return new Literal(this.previous());
         } else if (this.match(ID)) {
             return this.identifier();
@@ -1918,14 +1924,14 @@ class Parser {
         } else if (this.match(LSQUARE)) {
             return this.arrayExpr();
         }
-        
+
         this.error("Mengharapkan Ekspresi valid.");
     }
 
     valuable() {
         let result = this.primary();
 
-        while(true) {
+        while (true) {
             if (this.match(LPAREN)) {
                 result = this.functionCallExpr(result);
             } else if (this.match(LSQUARE)) {
@@ -1958,12 +1964,12 @@ class Parser {
         this.eat(ID, "Mengharapkan Nama member setelah '.'.");
         let id = this.identifier();
         return new Member(parent, id);
-    }  
+    }
 
     factor() {
         let expr = this.unary();
 
-        while(this.match(STAR, SLASH)) {
+        while (this.match(MODULUS, STAR, SLASH)) {
             let op = this.previous();
             let right = this.unary();
             expr = new Binary(expr, op, right);
@@ -1975,7 +1981,7 @@ class Parser {
     term() {
         let expr = this.factor();
 
-        while (this.match(MODULUS, PLUS, MINUS)) {
+        while (this.match(PLUS, MINUS)) {
             let op = this.previous();
             let right = this.factor();
             expr = new Binary(expr, op, right);
@@ -1987,7 +1993,7 @@ class Parser {
     equality() {
         let expr = this.term();
 
-        while(this.match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL, EQUAL_EQUAL, BANG_EQUAL)) {
+        if (this.match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL, EQUAL_EQUAL, BANG_EQUAL)) {
             let op = this.previous();
             let right = this.term();
             expr = new Binary(expr, op, right);
@@ -1995,11 +2001,11 @@ class Parser {
 
         return expr;
     }
-    
+
     andTerm() {
         let expr = this.equality();
 
-        while(this.match(AMPERSAND)) {
+        while (this.match(AMPERSAND)) {
             let op = this.previous();
             let right = this.equality();
             expr = new Binary(expr, op, right);
@@ -2011,7 +2017,7 @@ class Parser {
     orTerm() {
         let expr = this.andTerm();
 
-        while(this.match(PIPE)) {
+        while (this.match(PIPE)) {
             let op = this.previous();
             let right = this.equality();
             expr = new Binary(expr, op, right);
@@ -2100,7 +2106,7 @@ class Parser {
     }
 
     untukStmt() {
-        if(!this.match(ID, DATUM))
+        if (!this.match(ID, DATUM))
             this.error("Mengharapkan Tipe variabel untuk diinisialisasi setelah 'untuk'.");
         let varType = this.typeStmt();
         this.eat(ID, "Mengharapkan Nama variabel setelah Tipe dalam pernyataan 'untuk'.");
@@ -2128,16 +2134,16 @@ class Parser {
         let id = this.valuable();
         let shorthand = null;
         if (this.match(
-            PLUS, MINUS, STAR, SLASH, 
+            PLUS, MINUS, STAR, SLASH,
             AMPERSAND, PIPE, MODULUS
-          )) {
+        )) {
             shorthand = new Binary(id, this.previous(), null);
         }
         this.eat(EQUAL, "Mengharapkan '=' setelah variable yang ingin di-'rubah'.");
         let expr = this.expression();
         if (shorthand) {
-          shorthand.right = expr;
-          expr = shorthand;
+            shorthand.right = expr;
+            expr = shorthand;
         }
         return new Rubah(id, expr);
     }
@@ -2148,13 +2154,13 @@ class Parser {
         this.eat(LPAREN, "Mengharapkan '(' setelah deklarasi Nama Jenis.");
         if (this.check(RPAREN)) {
             this.error("Isian Jenis tidak boleh kosong.", false);
-        }   
+        }
         let enums = [];
         do {
             this.eat(ID, "Mengharapkan macam jenis dalam 'jenis'.");
             let enumb = this.previous();
             enums.push(enumb);
-        } while(this.match(COMMA))
+        } while (this.match(COMMA))
 
         this.eat(RPAREN, "Mengharapkan ')' untuk mengakhiri deklarasi 'jenis'.");
 
@@ -2169,17 +2175,17 @@ class Parser {
         if (this.check(RPAREN)) {
             this.error("Model tidak boleh tanpa isian.", false);
         }
-        
+
         let contents = [];
         do {
-            if(!this.match(ID, DATUM))
+            if (!this.match(ID, DATUM))
                 this.error("Mengharapkan Tipe member dalam deklarasi 'Model'.");
             let type = this.typeStmt();
             this.eat(ID, "Mengharapkan Nama member dalam deklarasi 'model'.");
             let memberName = this.previous();
 
             contents.push([type, memberName]);
-        } while(this.match(COMMA))
+        } while (this.match(COMMA))
 
         this.eat(RPAREN, "Mengharapkan ')' untuk mengakhiri deklarasi 'model'.");
 
@@ -2191,14 +2197,14 @@ class Parser {
         let token = this.previous();
         this.eat(LCURLY, "Mengharapkan '{' setelah Nama modul.");
         let statements = [];
-        while(!this.match(RCURLY)) {
+        while (!this.match(RCURLY)) {
             statements.push(this.statement());
         }
         return new Modul(token, statements);
     }
 
     statement() {
-        if(this.match(CETAK)) {
+        if (this.match(CETAK)) {
             return this.cetakStmt();
         } else if (this.match(ID, DATUM)) {
             return this.datumStmt();
@@ -2208,7 +2214,7 @@ class Parser {
             return this.kalauStmt();
         } else if (this.match(LCURLY)) {
             return this.blockStmt();
-        } else if (this.match(UNTUK)){
+        } else if (this.match(UNTUK)) {
             return this.untukStmt();
         } else if (this.match(SLAGI)) {
             return this.slagiStmt();
@@ -2232,14 +2238,14 @@ class Parser {
     }
 
     error(errmsg, found = true) {
-        throw new SimplErrorStruktur(`Error Struktur => ` + errmsg + ((found) ? ` Menemukan '${this.see().lexeme }'.` : ""), this.see().line);
+        throw new SimplErrorStruktur(`Error Struktur => ` + errmsg + ((found) ? ` Menemukan '${this.see().lexeme}'.` : ""), this.see().line);
     }
 
     parse(tokens) {
         this.init();
         this.tokens = tokens;
         let treeList = [];
-        while(!this.match(EOF)) {
+        while (!this.match(EOF)) {
             treeList.push(this.statement());
         }
         this.tree = new Simpl$1(treeList);
@@ -2266,17 +2272,17 @@ class Simpl {
             return output.join("\n");
         } catch (err) {
             if (err instanceof SimplError) {
-                const errorCode = textLines[err.line-1];
-                let errorText = (errorCode ? `ERROR! Pada baris ke-${err.line}\n>> ` + errorCode + '\n': "") + err.message;
+                const errorCode = textLines[err.line - 1];
+                let errorText = (errorCode ? `ERROR! Pada baris ke-${err.line}\n>> ` + errorCode + '\n' : "") + err.message;
                 if (err instanceof SimplErrorEksekusi) {
-                   errorText += (err.output ? "\nOutput dari kode:\n" : "") + err.output; 
+                    errorText += (err.output ? "\nOutput dari kode:\n" : "") + err.output;
                 }
                 return errorText;
             } else {
                 return `[Pada baris ke-${this.interpreter.line}] Uh Oh, ini error sistem. Mohon laporkan agar diperbaiki. [ ${err} ]`;
             }
         }
-        
+
     }
 }
 
