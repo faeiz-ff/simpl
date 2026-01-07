@@ -689,7 +689,10 @@ class Interpreter {
 
         for (let expr of arrayExpr.contents) {
             let v = this.validValue(expr.accept(this));
-            value.data.push(v);
+            let newVar = new Variable(v.type, false, v.data);
+            newVar.member = v.member;
+            newVar.isDatum = true;
+            value.data.push(newVar);
         }
 
         return value;
