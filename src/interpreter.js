@@ -259,8 +259,11 @@ export class Interpreter {
         let main = memberExpr.main.accept(this);
         let name = memberExpr.member.token.lexeme;
         this.line = memberExpr.member.token.line;
-        if (!main.member || !main.member.has(name)) {
+        if (!main?.member || !main.member.has(name)) {
             const type = this.environment.get(main.type.description);
+            if (!type) {
+                this.error(`nama .${name} tidak ditemukan.`);
+            }
             if (type.member?.has(name)) {
                 if (willBeCalled) {
                     this.objectStack = main;

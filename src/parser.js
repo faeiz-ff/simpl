@@ -245,7 +245,7 @@ export class Parser {
 
         while (this.match(TokenType.PIPE)) {
             let op = this.previous();
-            let right = this.equality();
+            let right = this.andTerm();
             expr = new Expr.Binary(expr, op, right);
         }
 
