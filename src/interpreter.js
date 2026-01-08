@@ -1,6 +1,7 @@
 import { SimplErrorEksekusi } from "./simpl-error.js";
 import { Environment } from "./environment.js";
 import * as Value from "./globals.js";
+import * as TokenType from "./token-type.js";
 
 export class Henti { }
 export class Lewat { }
@@ -220,8 +221,8 @@ export class Interpreter {
         }
         this.typeCheck(leftValue, rightValue, `Pada operasi biner ${binaryExpr.op.lexeme}`)
 
-        let result = this.environment.get(leftValue.type.description) // get Model
-            .operate(this, binaryExpr.op.type, rightValue, leftValue); // dispatch the operation
+        let type = this.environment.get(leftValue.type.description)
+        let result = this.operate(type, binaryExpr.op.type, rightValue, leftValue); 
 
         return result;
     }
@@ -236,9 +237,24 @@ export class Interpreter {
             this.error(`Tidak bisa mengoperasikan nilai Nihil.`);
         }
 
-        let result = this.environment.get(rightValue.type.description) // get Model
-            .operate(this, unaryExpr.op.type, rightValue); // dispatch the operation
+        let type = this.environment.get(rightValue.type.description) 
+        let result = this.operate(type, unaryExpr.op.type, rightValue); 
 
+        return result;
+    }
+
+    operate(type, op, right, left) {
+        let opLexeme = TokenType.TOKEN_STRING[op] + (left ? "" : "_UNER");
+        let operatorFunc = type.member.get(opLexeme);
+        if (!operatorFunc)
+            this.error(`operator ${opLexeme} tidak terdefinisi untuk Model ${right.type.description}.`);
+
+        let result = null;
+        if (left) { // Binary
+            result = this.callFunc(operatorFunc.data, [right, left]);
+        } else { // Unary, safe because valid unary op is just + - ! in the parser
+            result = this.callFunc(operatorFunc.data, [right]);
+        }
         return result;
     }
 
@@ -384,7 +400,7 @@ export class Interpreter {
     visitKalauStmt(kalauStmt) {
         // condition may be null for 'namun', accept the thenBlock if it is
         let condition = kalauStmt.condition?.accept(this);
-        if (condition.type !== Value.logisSymbol) {
+        if (condition?.type && condition?.type !== Value.logisSymbol) {
             this.error(`Ekspresi dalam 'kalau' harus bertipe logis, menemukan ${condition.type ? condition.type.description : "nihil"}`);
         }
         if (condition === null || condition === undefined || condition.data) {
@@ -516,26 +532,24 @@ export class Interpreter {
             if (variable.type !== Value.stipeSymbol) {
                 this.error(`Modul hanya bisa _ditambahkan_ pada tipe. '${name}' bukan merupakan tipe.`);
             }
-            if (variable.member) {
+            if (variable.member.memory.size > 0) {
                 this.error(`Tipe '${name}' sudah memiliki modul sendiri, tidak bisa definisi ulang.`);
             }
+        } else {
+            variable = new Value.Variable(Value.modulSymbol, true, null);
+            variable.member = new Environment();
+            this.environment.define(name, variable);
         }
 
         let lastEnv = this.environment;
-        this.environment = new Environment(this.environment);
+        variable.member.enclosing = this.environment;
+        this.environment = variable.member;
         for (let stmt of modulStmt.statements) {
             stmt.accept(this);
         }
 
-        [this.environment, lastEnv] = [lastEnv, this.environment];
+        [this.environment, variable.member] = [lastEnv, this.environment];
 
-        if (variable) {
-            variable.member = lastEnv;
-        } else {
-            let res = new Value.Variable(Value.modulSymbol, true, null);
-            res.member = lastEnv;
-            this.environment.define(name, res);
-        }
     }
 
     // UTILITIES
