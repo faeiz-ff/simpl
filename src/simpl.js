@@ -21,6 +21,7 @@ class Simpl {
             let output = this.interpreter.interpret(pohon);
             return output.join("\n");
         } catch (err) {
+            // throw err
             if (err instanceof SimplError) {
                 const errorCode = textLines[err.line - 1];
                 let errorText = (errorCode ? `ERROR! Pada baris ke-${err.line}\n>> ` + errorCode + '\n' : "") + err.message;

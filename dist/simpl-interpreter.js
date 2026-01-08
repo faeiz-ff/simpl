@@ -109,9 +109,7 @@ class PetikTipe extends Stipe {
                     if (!thing?.type) return `nihil`;
                     let type = v.environment.get(thing.type.description);
                     if (type?.member.has("kePetik")) {
-                        v.stack.push(v.line);
                         let res = v.callFunc(type.member.get("kePetik").data, [thing]).data;
-                        v.stack.pop();
                         return res;
                     }
                     return `${thing.type.description}<>`;
@@ -241,7 +239,10 @@ class AngkaTipe extends Stipe {
 class LogisTipe extends Stipe {
     constructor() {
         super(logisSymbol, new Callable(null, (_, args) => {
-            return new Value(logisSymbol, Boolean(args[0].data) || Boolean(args[0].data.member.size));
+            if (args[0].type === barisSymbol && args[0].data.length === 0) {
+                return new Value(logisSymbol, false);
+            }
+            return new Value(logisSymbol, Boolean(args[0].data) || Boolean(args[0].data?.member?.size));
         }, [[null]], logisSymbol, true)
         );
         this.init();
@@ -411,6 +412,10 @@ let Jenis$1 = class Jenis extends Stipe {
         enums.forEach((thing, idx) => {
             this.member.define(thing.lexeme, new Value(sym, idx));
         });
+        this.member.define("kePetik", makeBuiltInFunc([sym], petikSymbol, (_, [j]) => {
+            let enumName = enums.map(thing=>thing.lexeme)[j.data];
+            return new Value(petikSymbol, `${name}.${enumName}`);
+        }));
         this.init(sym);
     }
 
@@ -922,8 +927,9 @@ class Interpreter {
             if (type.member?.has(name)) {
                 if (willBeCalled) {
                     this.objectStack = main;
+                    return type.member.get(name);
                 }
-                return type.member.get(name);
+                this.error(`akses titik . dari objek ke model harus berupa panggilan/penggunaaan mesin.`);
             }
             this.error(`nama .${name} tidak ditemukan dalam tipe ${main.type.description}`);
         } else {
@@ -964,12 +970,7 @@ class Interpreter {
                 if (!thing?.type) return `nihil`;
                 let type = this.environment.get(thing.type.description);
                 if (type?.member?.has("kePetik")) {
-                    let prevState = this.state;
-                    this.state = location.MESIN;
-                    this.stack.push(this.line);
                     let res = this.callFunc(type.member.get("kePetik").data, [thing]).data;
-                    this.stack.pop();
-                    this.state = prevState;
                     return res;
                 }
                 return `${thing.type.description}<>`;
@@ -2295,6 +2296,7 @@ class Simpl {
             let output = this.interpreter.interpret(pohon);
             return output.join("\n");
         } catch (err) {
+            // throw err
             if (err instanceof SimplError) {
                 const errorCode = textLines[err.line - 1];
                 let errorText = (errorCode ? `ERROR! Pada baris ke-${err.line}\n>> ` + errorCode + '\n' : "") + err.message;

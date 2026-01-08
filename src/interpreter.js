@@ -283,8 +283,9 @@ export class Interpreter {
             if (type.member?.has(name)) {
                 if (willBeCalled) {
                     this.objectStack = main;
+                    return type.member.get(name);
                 }
-                return type.member.get(name);
+                this.error(`akses titik . dari objek ke model harus berupa panggilan/penggunaaan mesin.`);
             }
             this.error(`nama .${name} tidak ditemukan dalam tipe ${main.type.description}`);
         } else {
@@ -325,12 +326,7 @@ export class Interpreter {
                 if (!thing?.type) return `nihil`;
                 let type = this.environment.get(thing.type.description);
                 if (type?.member?.has("kePetik")) {
-                    let prevState = this.state;
-                    this.state = location.MESIN;
-                    this.stack.push(this.line);
                     let res = this.callFunc(type.member.get("kePetik").data, [thing]).data;
-                    this.stack.pop();
-                    this.state = prevState;
                     return res;
                 }
                 return `${thing.type.description}<>`;

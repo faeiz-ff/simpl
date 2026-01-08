@@ -61,9 +61,7 @@ class PetikTipe extends Stipe {
                     if (!thing?.type) return `nihil`;
                     let type = v.environment.get(thing.type.description);
                     if (type?.member.has("kePetik")) {
-                        v.stack.push(v.line);
                         let res = v.callFunc(type.member.get("kePetik").data, [thing]).data;
-                        v.stack.pop();
                         return res;
                     }
                     return `${thing.type.description}<>`;
@@ -193,7 +191,10 @@ class AngkaTipe extends Stipe {
 class LogisTipe extends Stipe {
     constructor() {
         super(logisSymbol, new Callable(null, (_, args) => {
-            return new Value(logisSymbol, Boolean(args[0].data) || Boolean(args[0].data.member.size));
+            if (args[0].type === barisSymbol && args[0].data.length === 0) {
+                return new Value(logisSymbol, false);
+            }
+            return new Value(logisSymbol, Boolean(args[0].data) || Boolean(args[0].data?.member?.size));
         }, [[null]], logisSymbol, true)
         );
         this.init();
@@ -363,6 +364,10 @@ export class Jenis extends Stipe {
         enums.forEach((thing, idx) => {
             this.member.define(thing.lexeme, new Value(sym, idx));
         });
+        this.member.define("kePetik", makeBuiltInFunc([sym], petikSymbol, (_, [j]) => {
+            let enumName = enums.map(thing=>thing.lexeme)[j.data]
+            return new Value(petikSymbol, `${name}.${enumName}`);
+        }))
         this.init(sym);
     }
 
