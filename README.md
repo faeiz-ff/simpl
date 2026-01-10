@@ -16,7 +16,6 @@ Berikut fitur yang _sekarang_ sudah diimplementasikan:
 - **Semua** kata kunci berjumlah 5 huruf dan dalam bahasa Indonesia 
 
 Fitur yang akan datang:
-- Website untuk menjalankan `simpl`
 - dokumentasi penuh
 - Pembersihan dan perapihan kode sumber :')
 - Pengecekan sebelum eksekusi (Analisa semantik)
@@ -114,7 +113,7 @@ Pengguna lain = Pengguna.baru("Hengker Anongnimus")
 cetak Pengguna.kepetik(admin)
 # "{ nama: zie, id: 0, status: online }"
 
-cetak Pengguna.kePetik(lain)
+cetak lain.kePetik()
 # "{ nama: Hengker Anongnimus, id: 1, status: online }"
 ```
 
@@ -124,4 +123,4 @@ cetak Pengguna.kePetik(lain)
 - [https://ruslanspivak.com/lsbasi-part1/](https://ruslanspivak.com/lsbasi-part1/)
 - [https://craftinginterpreters.com/](https://craftinginterpreters.com/)
 
-(No AI was used while making this, the proof is apparent in the spaghetti codebase)
+

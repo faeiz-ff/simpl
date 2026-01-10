@@ -305,35 +305,7 @@ export class Interpreter {
 
     visitCetakStmt(cetakStmt) {
         let result = cetakStmt.expr.accept(this);
-        const kePetik = (thing) => {
-            if (thing.type === Value.logisSymbol) {
-                return thing.data ? "benar" : "salah";
-            } else if (thing.type === Value.barisSymbol) {
-                return '[' + thing.data.reduce((str, val) => {
-                    let item = kePetik(val);
-                    return str + ", " + (val.type === Value.petikSymbol ? `"${item}"` : item);
-                }, "").slice(1) + ' ]';
-            } else if (thing.type === Value.stipeSymbol) {
-                return `Model<${thing.symbol.description}>`;
-            } else if (thing.type === Value.mesinSymbol) {
-                let underlying = thing.data.returnType?.description;
-                return `Mesin<${underlying ? underlying : 'datum'}>`;
-            } else if (thing.type === Value.angkaSymbol) {
-                return thing.data.toString();
-            } else if (thing.type === Value.petikSymbol) {
-                return thing.data;
-            } else {
-                if (!thing?.type) return `nihil`;
-                let type = this.environment.get(thing.type.description);
-                if (type?.member?.has("kePetik")) {
-                    let res = this.callFunc(type.member.get("kePetik").data, [thing]).data;
-                    return res;
-                }
-                return `${thing.type.description}<>`;
-            }
-        }
-
-        this.output.push(kePetik(result));
+        this.output.push(Value.kePetik(this, result));
 
     }
 
@@ -365,6 +337,9 @@ export class Interpreter {
 
     visitRubahStmt(rubahStmt) {
         let variable = rubahStmt.variable.accept(this); // is a reference to the variable data
+        if (variable.tetap === undefined) {
+            this.error(`Pe-rubah-an hanya dapat dilakukan kepada Variabel!`);
+        }
         if (variable.tetap) {
             this.error(`Variabel tetap tidak dapat di-rubah.`);
         }

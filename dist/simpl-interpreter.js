@@ -88,36 +88,38 @@ class Stipe extends Variable {
 
 }
 
+function kePetik(v, thing) {
+    if (thing.type === logisSymbol) {
+        return thing.data ? "benar" : "salah";
+    } else if (thing.type === barisSymbol) {
+        return '[' + thing.data.reduce((str, val) => {
+            let item = kePetik(v, val);
+            return str + ", " + (val.type === Value.petikSymbol ? `"${item}"` : item);
+        }, "").slice(1) + ' ]';
+    } else if (thing.type === stipeSymbol) {
+        return `Model<${thing.symbol.description}>`;
+    } else if (thing.type === mesinSymbol) {
+        let underlying = thing.data.returnType?.description;
+        return `Mesin<${underlying ? underlying : 'datum'}>`;
+    } else if (thing.type === angkaSymbol) {
+        return thing.data.toString();
+    } else if (thing.type === petikSymbol) {
+        return '"' + thing.data + '"';
+    } else {
+        if (!thing?.type) return `nihil`;
+        let type = v.environment.get(thing.type.description);
+        if (type?.member.has("kePetik")) {
+            let res = v.callFunc(type.member.get("kePetik").data, [thing]).data;
+            return res;
+        }
+        return `${thing.type.description}<>`;
+    }
+}
+
 class PetikTipe extends Stipe {
     constructor() {
-        super(petikSymbol, new Callable(null, (v, args) => {
-            const kePetik = (thing) => {
-                if (thing.type === logisSymbol) {
-                    return thing.data ? "benar" : "salah";
-                } else if (thing.type === barisSymbol) {
-                    return '[' + thing.data.reduce((str, val) => str + ", " + kePetik(val), "").slice(1) + ' ]';
-                } else if (thing.type === stipeSymbol) {
-                    return `Model<${thing.symbol.description}>`;
-                } else if (thing.type === mesinSymbol) {
-                    let underlying = thing.data.returnType?.description;
-                    return `Mesin<${underlying ? underlying : 'datum'}>`;
-                } else if (thing.type === angkaSymbol) {
-                    return thing.data.toString();
-                } else if (thing.type === petikSymbol) {
-                    return '"' + thing.data + '"';
-                } else {
-                    if (!thing?.type) return `nihil`;
-                    let type = v.environment.get(thing.type.description);
-                    if (type?.member.has("kePetik")) {
-                        let res = v.callFunc(type.member.get("kePetik").data, [thing]).data;
-                        return res;
-                    }
-                    return `${thing.type.description}<>`;
-                }
-            };
-            return new Value(petikSymbol, kePetik(args[0]));
-        }, [[null]], petikSymbol, true)
-        );
+        super(petikSymbol, new Callable(null, (v, args) => new Value(petikSymbol, kePetik(v, args[0])), 
+            [[null]], petikSymbol, true) );
         this.init();
     }
 
@@ -144,6 +146,9 @@ class PetikTipe extends Stipe {
 
         this.member.define("SERU_UNER",
             makeBuiltInFunc([petikSymbol], logisSymbol, (_, [r]) => new Value(logisSymbol, !Boolean(r.data))));
+
+        this.member.define("kePetik", 
+            makeBuiltInFunc([petikSymbol], petikSymbol, (v, [p]) => new Value(petikSymbol, kePetik(v, p))));
 
         this.member.define("pisah", makeBuiltInFunc([petikSymbol, petikSymbol], barisSymbol, (_, [d, sep]) => {
             return new Value(barisSymbol, d.data.split(sep.data).map(val => new Value(petikSymbol, val)));
@@ -224,6 +229,9 @@ class AngkaTipe extends Stipe {
         this.member.define("MINUS_UNER",
             makeBuiltInFunc([angkaSymbol], angkaSymbol, (_, [r]) => new Value(angkaSymbol, -r.data)));
 
+        this.member.define("kePetik", 
+            makeBuiltInFunc([angkaSymbol], petikSymbol, (v, [a]) => new Value(petikSymbol, kePetik(v, a))));
+
         this.member.define("bulat", makeBuiltInFunc([angkaSymbol], angkaSymbol, (_, [a]) => {
             return new Value(angkaSymbol, Math.round(a.data));
         }));
@@ -259,6 +267,9 @@ class LogisTipe extends Stipe {
             makeBuiltInFunc([logisSymbol, logisSymbol], logisSymbol, (_, [r, l]) => new Value(logisSymbol, l.data || r.data)));
         this.member.define("SERU_UNER",
             makeBuiltInFunc([logisSymbol], logisSymbol, (_, [r]) => new Value(logisSymbol, !Boolean(r.data))));
+
+        this.member.define("kePetik", 
+            makeBuiltInFunc([logisSymbol], petikSymbol, (v, [l]) => new Value(petikSymbol, kePetik(v, l))));
     }
 }
 
@@ -269,6 +280,13 @@ class BarisTipe extends Stipe {
     }
 
     init() {
+        const valueToVariableDatum = (d) => {
+            let input = new Variable(d.type, false, d.data);
+            input.member = d.member;
+            input.isDatum = true;
+            return input;
+        };
+
         this.member.define("PLUS",
             makeBuiltInFunc([barisSymbol, barisSymbol], barisSymbol, (_, [r, l]) =>
                 new Value(barisSymbol, Array(...l.data, ...r.data))
@@ -306,6 +324,9 @@ class BarisTipe extends Stipe {
         this.member.define("SERU_UNER",
             makeBuiltInFunc([barisSymbol], logisSymbol, (_, [r]) => new Value(logisSymbol, !Boolean(r.data))));
 
+        this.member.define("kePetik", 
+            makeBuiltInFunc([barisSymbol], petikSymbol, (v, [p]) => new Value(petikSymbol, kePetik(v, p))));
+
         this.member.define("hapus", makeBuiltInFunc([barisSymbol, angkaSymbol], barisSymbol, (v, [b, i]) => {
             if (b.data.length <= i.data) {
                 v.error(`Indeks tidak boleh lebih besar atau sama dengan ukuran baris, ${i.data} >= ${b.data.length}`);
@@ -318,12 +339,12 @@ class BarisTipe extends Stipe {
 
         this.member.define("potongan", makeBuiltInFunc([barisSymbol, angkaSymbol, angkaSymbol], barisSymbol, (v, [b, fr, to]) => {
             if (fr.data >= b.data.length || fr.data < 0 || to.data <= fr.data || to.data > b.data.length) {
-                v.error(`Indeks tidak valid, ${fr.data}:${to.data}, dengan ukuran baris ${b.data.length}`);
+                v.error(`Indeks tidak valid, ${fr.data} sampai ${to.data}, dengan ukuran baris ${b.data.length}`);
             }
             return new Value(barisSymbol, b.data.slice(fr.data, to.data));
         }));
         this.member.define("tumpuk", makeBuiltInFunc([barisSymbol, null], null, (_, [b, d]) => {
-            b.data.push(d);
+            b.data.push(valueToVariableDatum(d));
             return b;
         }));
         this.member.define("tumpah", makeBuiltInFunc([barisSymbol], null, (_, [b]) => {
@@ -334,14 +355,14 @@ class BarisTipe extends Stipe {
             if (idx.data > b.data.length) {
                 v.error(`Indeks tidak valid, ${idx.data}, dengan ukuran baris ${b.data.length}`);
             }
-            b.data.splice(idx.data, 0, d);
+            b.data.splice(idx.data, 0, valueToVariableDatum(d));
             return b;
         }));
         this.member.define("petakan", makeBuiltInFunc([barisSymbol, mesinSymbol], barisSymbol, (v, [b, m]) => {
             let newBaris = new Value(barisSymbol, []);
             for (let datum of b.data) {
                 let result = v.callFunc(m.data, [datum]);
-                newBaris.data.push(result);
+                newBaris.data.push(valueToVariableDatum(result));
             }
             return newBaris;
         }));
@@ -350,7 +371,7 @@ class BarisTipe extends Stipe {
             for (let datum of b.data) {
                 let result = v.callFunc(m.data, [datum]);
                 if (result.data === true) {
-                    newBaris.data.push(datum);
+                    newBaris.data.push(valueToVariableDatum(datum));
                 }
             }
             return newBaris;
@@ -362,13 +383,33 @@ class BarisTipe extends Stipe {
             }
             return d;
         }));
+
+        this.member.define("punya?", makeBuiltInFunc([barisSymbol, null], logisSymbol, (v, [b, d]) => {
+            let type = v.environment.get(d.type?.description);
+            if (!type) 
+                v.error(`Tipe tidak ditemukan atau tidak valid`);
+            let equalFunc;
+            if (type.member?.has("SAMA_SAMA")) {
+                equalFunc = type.member.get("SAMA_SAMA");
+            } else {
+                v.error(`model ${d.type.description} tidak mempunyai mesin SAMA_SAMA di dalam modulnya.`);
+            }
+            for (let datum of b.data) {
+                if (datum.type !== d.type) continue;
+                let isEqual = v.callFunc(equalFunc.data, [datum, d]);
+                if (isEqual.data) return new Value(logisSymbol, true);
+            }
+            return new Value(logisSymbol, false);
+        }));
     }
 }
 
 class MesinTipe extends Stipe {
     constructor() {
         super(mesinSymbol);
-        this.member.define("$", null);
+
+        this.member.define("kePetik", 
+            makeBuiltInFunc([mesinSymbol], petikSymbol, (v, [m]) => new Value(petikSymbol, kePetik(v, m))));
     }
 }
 
@@ -449,7 +490,12 @@ function copier(thing) {
         case angkaSymbol: return new Value(angkaSymbol, thing.data);
         case logisSymbol: return new Value(logisSymbol, thing.data);
         case mesinSymbol: return new Value(mesinSymbol, thing.data);
-        case barisSymbol: return new Value(barisSymbol, thing.data.map((val) => copier(val)));
+        case barisSymbol: return new Value(barisSymbol, thing.data.map((val) => {
+            let copy = copier(val);
+            let varCopy = new Variable(copy.type, false, copy.data);
+            varCopy.member = copy.member;
+            return varCopy
+        }));
         case stipeSymbol: return NIHIL;
         case modulSymbol: return NIHIL;
         default:
@@ -458,13 +504,17 @@ function copier(thing) {
                 let valCopy = new Value(thing.type, null);
                 let newMember = new Environment();
                 for (let i of keys) {
-                    newMember.define(i, copier(thing.member.get(i)));
+                    let varPrev = thing.member.get(i);
+                    let tempCopy = copier(varPrev);
+                    let varCopy = new Variable(varPrev.type, varPrev.tetap, tempCopy.data);
+                    varCopy.member = tempCopy.member;
+                    newMember.define(i, varCopy);
                 }
                 valCopy.member = newMember;
-
+                valCopy.data = thing.data;
                 return valCopy;
             }
-            return NIHIL;
+            return new Value(thing.type, thing.data);
     }
 }
 
@@ -949,35 +999,7 @@ class Interpreter {
 
     visitCetakStmt(cetakStmt) {
         let result = cetakStmt.expr.accept(this);
-        const kePetik = (thing) => {
-            if (thing.type === logisSymbol) {
-                return thing.data ? "benar" : "salah";
-            } else if (thing.type === barisSymbol) {
-                return '[' + thing.data.reduce((str, val) => {
-                    let item = kePetik(val);
-                    return str + ", " + (val.type === petikSymbol ? `"${item}"` : item);
-                }, "").slice(1) + ' ]';
-            } else if (thing.type === stipeSymbol) {
-                return `Model<${thing.symbol.description}>`;
-            } else if (thing.type === mesinSymbol) {
-                let underlying = thing.data.returnType?.description;
-                return `Mesin<${underlying ? underlying : 'datum'}>`;
-            } else if (thing.type === angkaSymbol) {
-                return thing.data.toString();
-            } else if (thing.type === petikSymbol) {
-                return thing.data;
-            } else {
-                if (!thing?.type) return `nihil`;
-                let type = this.environment.get(thing.type.description);
-                if (type?.member?.has("kePetik")) {
-                    let res = this.callFunc(type.member.get("kePetik").data, [thing]).data;
-                    return res;
-                }
-                return `${thing.type.description}<>`;
-            }
-        };
-
-        this.output.push(kePetik(result));
+        this.output.push(kePetik(this, result));
 
     }
 
@@ -1009,6 +1031,9 @@ class Interpreter {
 
     visitRubahStmt(rubahStmt) {
         let variable = rubahStmt.variable.accept(this); // is a reference to the variable data
+        if (variable.tetap === undefined) {
+            this.error(`Pe-rubah-an hanya dapat dilakukan kepada Variabel!`);
+        }
         if (variable.tetap) {
             this.error(`Variabel tetap tidak dapat di-rubah.`);
         }
