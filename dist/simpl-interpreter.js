@@ -454,8 +454,7 @@ let Jenis$1 = class Jenis extends Stipe {
             this.member.define(thing.lexeme, new Value(sym, idx));
         });
         this.member.define("kePetik", makeBuiltInFunc([sym], petikSymbol, (_, [j]) => {
-            let enumName = enums.map(thing=>thing.lexeme)[j.data];
-            return new Value(petikSymbol, `${name}.${enumName}`);
+            return new Value(petikSymbol, `${name}<${j.data}>`);
         }));
         this.init(sym);
     }
@@ -1404,6 +1403,17 @@ class Lexer {
         this.charStart++;
     }
 
+    multilineComment() {
+        this.advance(); this.advance();
+        this.charStart = this.charStart + 2;
+        while (!this.isAtEnd() && (this.see() !== '*' || this.peek() !== '/')) {
+            this.advance();
+            this.charStart++;
+        }
+        this.advance(); this.advance();
+        this.charStart = this.charStart + 2;
+    }
+
     makeToken(type) {
         this.advance();
         return new Token(type, this.parseLexeme(), null, this.lineIndex);
@@ -1411,8 +1421,9 @@ class Lexer {
 
     scan() {
         this.skipWhitespaces();
-        while (this.see() === '#') {
-            this.comment();
+        while (this.see() === '#' || (this.see() === '/' && this.peek() === '*')) {
+            if (this.see() === '#') this.comment();
+            else this.multilineComment();
             this.skipWhitespaces();
         }
 

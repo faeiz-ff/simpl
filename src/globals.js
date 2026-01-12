@@ -406,8 +406,7 @@ export class Jenis extends Stipe {
             this.member.define(thing.lexeme, new Value(sym, idx));
         });
         this.member.define("kePetik", makeBuiltInFunc([sym], petikSymbol, (_, [j]) => {
-            let enumName = enums.map(thing=>thing.lexeme)[j.data]
-            return new Value(petikSymbol, `${name}.${enumName}`);
+            return new Value(petikSymbol, `${name}<${j.data}>`);
         }))
         this.init(sym);
     }
