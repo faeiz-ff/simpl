@@ -134,6 +134,17 @@ export class Lexer {
         this.charStart++;
     }
 
+    multilineComment() {
+        this.advance(); this.advance();
+        this.charStart = this.charStart + 2;
+        while (!this.isAtEnd() && (this.see() !== '*' || this.peek() !== '/')) {
+            this.advance();
+            this.charStart++;
+        }
+        this.advance(); this.advance();
+        this.charStart = this.charStart + 2;
+    }
+
     makeToken(type) {
         this.advance();
         return new Token(type, this.parseLexeme(), null, this.lineIndex);
@@ -141,8 +152,9 @@ export class Lexer {
 
     scan() {
         this.skipWhitespaces();
-        while (this.see() === '#') {
-            this.comment();
+        while (this.see() === '#' || (this.see() === '/' && this.peek() === '*')) {
+            if (this.see() === '#') this.comment();
+            else this.multilineComment();
             this.skipWhitespaces();
         }
 
