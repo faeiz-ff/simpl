@@ -131,6 +131,16 @@ export class Lewat extends StmtBase {
     }
 }
 
+export class Jatuh extends StmtBase {
+    constructor() {
+        super();
+    }
+
+    visit(visitor) {
+        return visitor.visitJatuhStmt(this);
+    }
+}
+
 export class Rubah extends StmtBase {
     // Expr.ExprBase variable, Expr.ExprBase value
     constructor(variable, value) {

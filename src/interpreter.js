@@ -4,6 +4,7 @@ import * as Value from "./globals.js";
 import * as TokenType from "./token-type.js";
 
 export class Henti { }
+export class Jatuh { }
 export class Lewat { }
 export class Hasil {
     constructor(value) {
@@ -16,6 +17,7 @@ const location = {
     SLAGI: 2,
     UNTUK: 3,
     MESIN: 4,
+    LIHAT: 5,
 }
 const MAX_STACK_SIZE = 500;
 
@@ -415,6 +417,12 @@ export class Interpreter {
         else this.error("Tidak ada pengulangan untuk dilewatkan.");
     }
 
+    visitJatuhStmt() {
+        if (this.state === location.LIHAT)
+            throw new Jatuh();
+        else this.error("Tidak bisa jatuh di luar blok kasus.")
+    }
+
     visitHasilStmt(hasilStmt) {
         if (this.stack.length == 0) {
             this.error("Tidak bisa menghasilkan diluar blok mesin.");
@@ -485,9 +493,7 @@ export class Interpreter {
                 if (err instanceof Lewat) {
                     continue;
                 } else if (err instanceof Henti) {
-                    if (this.stackNum !== 0) this.state = location.MESIN;
-                    else this.state = location.GLOBAL;
-                    return;
+                    break;
                 } else {
                     throw err;
                 }
@@ -511,18 +517,32 @@ export class Interpreter {
             this.error(`tipe ${matchType ? match.type.description : "nihil"} tidak mempunyai mesin SAMA_SAMA.`);
         }
         let equalFunc = matchType.member.get("SAMA_SAMA");
+
+        const handleBlock = (index) => {
+            while (index < lihatStmt.cases.length) {
+                try {
+                    this.state = location.LIHAT;
+                    lihatStmt.cases[index][1].accept(this);
+                    this.state = location.LIHAT;
+                } catch (err) {
+                    if (err instanceof Jatuh) {
+                        index++; continue;
+                    } else throw err;
+                }
+                break;
+            }
+            if (this.stackNum !== 0) this.state = location.MESIN;
+            else this.state = location.GLOBAL;
+        }
         
-        for (let someCase of lihatStmt.cases) {
-            if (!someCase[0]) {
-                someCase[1].accept(this);
-                return;
-            } 
+        for (let i = 0; i < lihatStmt.cases.length; i++) {
+            let someCase = lihatStmt.cases[i];
+
+            if (!someCase[0]) return handleBlock(i);
+
             let expr = someCase[0].accept(this);
             let isEqual = this.callFunc(equalFunc.data, [match, expr]);
-            if (isEqual.data) {
-                someCase[1].accept(this);
-                return;
-            } 
+            if (isEqual.data) return handleBlock(i);
         }
     }
 

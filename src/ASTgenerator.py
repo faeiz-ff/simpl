@@ -41,7 +41,7 @@ def writeAST(name, derived_list):
         add("}")
         add("")
 
-    with open(name+".js", "w") as f:
+    with open(name.lower()+".js", "w") as f:
         f.writelines(s)
 
 def writeType(reserved, other):
@@ -85,6 +85,7 @@ def main():
             "rubah", "kalau", "namun", "slagi", "untuk", "cetak",
             "henti", "lewat", "dalam", "hasil", "kerja", "datum",
             "jenis", "model", "tetap", "modul", "lihat", "kasus",
+            "jatuh",
         ],
         [
             "eof", "id", "literal", "plus", "minus", "star",
@@ -120,6 +121,7 @@ def main():
         "Slagi : Expr.ExprBase condition, Stmt.Block block",
         "Henti",
         "Lewat",
+        "Jatuh",
         "Rubah : Expr.ExprBase variable, Expr.ExprBase value",
         "Hasil : Expr.ExprBase expr", # lol ironic
         "Jenis : Token name, Array<Token> enums",

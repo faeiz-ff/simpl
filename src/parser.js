@@ -470,6 +470,8 @@ export class Parser {
             return new Stmt.Henti();
         } else if (this.match(TokenType.LEWAT)) {
             return new Stmt.Lewat();
+        } else if (this.match(TokenType.JATUH)) {
+            return new Stmt.Jatuh();
         } else if (this.match(TokenType.RUBAH)) {
             return this.rubahStmt();
         } else if (this.match(TokenType.HASIL)) {

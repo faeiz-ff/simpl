@@ -601,6 +601,7 @@ const RESERVED_KEYWORDS = [
     "modul",
     "lihat",
     "kasus",
+    "jatuh",
 ];
 
 const
@@ -622,36 +623,37 @@ const
     MODUL = 15,
     LIHAT = 16,
     KASUS = 17,
-    EOF = 18,
-    ID = 19,
-    LITERAL = 20,
-    PLUS = 21,
-    MINUS = 22,
-    STAR = 23,
-    SLASH = 24,
-    LPAREN = 25,
-    RPAREN = 26,
-    GREATER = 27,
-    GREATER_EQUAL = 28,
-    LESS = 29,
-    LESS_EQUAL = 30,
-    EQUAL = 31,
-    EQUAL_EQUAL = 32,
-    DOT = 33,
-    LCURLY = 34,
-    RCURLY = 35,
-    COMMA = 36,
-    LSQUARE = 37,
-    RSQUARE = 38,
-    PIPE = 39,
-    AMPERSAND = 40,
-    BANG = 41,
-    ARROW = 42,
-    BANG_EQUAL = 43,
-    MODULUS = 44,
-    PIPELINE = 45,
-    COLON = 46,
-    DOLLAR = 47;
+    JATUH = 18,
+    EOF = 19,
+    ID = 20,
+    LITERAL = 21,
+    PLUS = 22,
+    MINUS = 23,
+    STAR = 24,
+    SLASH = 25,
+    LPAREN = 26,
+    RPAREN = 27,
+    GREATER = 28,
+    GREATER_EQUAL = 29,
+    LESS = 30,
+    LESS_EQUAL = 31,
+    EQUAL = 32,
+    EQUAL_EQUAL = 33,
+    DOT = 34,
+    LCURLY = 35,
+    RCURLY = 36,
+    COMMA = 37,
+    LSQUARE = 38,
+    RSQUARE = 39,
+    PIPE = 40,
+    AMPERSAND = 41,
+    BANG = 42,
+    ARROW = 43,
+    BANG_EQUAL = 44,
+    MODULUS = 45,
+    PIPELINE = 46,
+    COLON = 47,
+    DOLLAR = 48;
 
 const TOKEN_STRING = [
     "RUBAH",
@@ -672,6 +674,7 @@ const TOKEN_STRING = [
     "MODUL",
     "LIHAT",
     "KASUS",
+    "JATUH",
     "EOF",
     "ID",
     "LITERAL",
@@ -705,6 +708,7 @@ const TOKEN_STRING = [
 ];
 
 let Henti$1 = class Henti { };
+let Jatuh$1 = class Jatuh { };
 let Lewat$1 = class Lewat { };
 let Hasil$1 = class Hasil {
     constructor(value) {
@@ -717,6 +721,7 @@ const location = {
     SLAGI: 2,
     UNTUK: 3,
     MESIN: 4,
+    LIHAT: 5,
 };
 const MAX_STACK_SIZE = 500;
 
@@ -1116,6 +1121,12 @@ class Interpreter {
         else this.error("Tidak ada pengulangan untuk dilewatkan.");
     }
 
+    visitJatuhStmt() {
+        if (this.state === location.LIHAT)
+            throw new Jatuh$1();
+        else this.error("Tidak bisa jatuh di luar blok kasus.");
+    }
+
     visitHasilStmt(hasilStmt) {
         if (this.stack.length == 0) {
             this.error("Tidak bisa menghasilkan diluar blok mesin.");
@@ -1186,9 +1197,7 @@ class Interpreter {
                 if (err instanceof Lewat$1) {
                     continue;
                 } else if (err instanceof Henti$1) {
-                    if (this.stackNum !== 0) this.state = location.MESIN;
-                    else this.state = location.GLOBAL;
-                    return;
+                    break;
                 } else {
                     throw err;
                 }
@@ -1212,18 +1221,32 @@ class Interpreter {
             this.error(`tipe ${matchType ? match.type.description : "nihil"} tidak mempunyai mesin SAMA_SAMA.`);
         }
         let equalFunc = matchType.member.get("SAMA_SAMA");
+
+        const handleBlock = (index) => {
+            while (index < lihatStmt.cases.length) {
+                try {
+                    this.state = location.LIHAT;
+                    lihatStmt.cases[index][1].accept(this);
+                    this.state = location.LIHAT;
+                } catch (err) {
+                    if (err instanceof Jatuh$1) {
+                        index++; continue;
+                    } else throw err;
+                }
+                break;
+            }
+            if (this.stackNum !== 0) this.state = location.MESIN;
+            else this.state = location.GLOBAL;
+        };
         
-        for (let someCase of lihatStmt.cases) {
-            if (!someCase[0]) {
-                someCase[1].accept(this);
-                return;
-            } 
+        for (let i = 0; i < lihatStmt.cases.length; i++) {
+            let someCase = lihatStmt.cases[i];
+
+            if (!someCase[0]) return handleBlock(i);
+
             let expr = someCase[0].accept(this);
             let isEqual = this.callFunc(equalFunc.data, [match, expr]);
-            if (isEqual.data) {
-                someCase[1].accept(this);
-                return;
-            } 
+            if (isEqual.data) return handleBlock(i);
         }
     }
 
@@ -1834,6 +1857,16 @@ class Lewat extends StmtBase {
     }
 }
 
+class Jatuh extends StmtBase {
+    constructor() {
+        super();
+    }
+
+    visit(visitor) {
+        return visitor.visitJatuhStmt(this);
+    }
+}
+
 class Rubah extends StmtBase {
     // Expr.ExprBase variable, Expr.ExprBase value
     constructor(variable, value) {
@@ -2389,6 +2422,8 @@ class Parser {
             return new Henti();
         } else if (this.match(LEWAT)) {
             return new Lewat();
+        } else if (this.match(JATUH)) {
+            return new Jatuh();
         } else if (this.match(RUBAH)) {
             return this.rubahStmt();
         } else if (this.match(HASIL)) {
