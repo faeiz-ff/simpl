@@ -36,6 +36,7 @@ export class Stipe extends Variable {
         super(stipeSymbol, true, data);
         this.symbol = type;
         this.member = new Environment();
+        this.member.define("buat", new Value(mesinSymbol, data));
     }
 
 }
