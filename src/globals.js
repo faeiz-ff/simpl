@@ -44,10 +44,7 @@ export function kePetik(v, thing) {
     if (thing.type === logisSymbol) {
         return thing.data ? "benar" : "salah";
     } else if (thing.type === barisSymbol) {
-        return '[' + thing.data.reduce((str, val) => {
-            let item = kePetik(v, val);
-            return str + ", " + (val.type === Value.petikSymbol ? `"${item}"` : item);
-        }, "").slice(1) + ' ]';
+        return '[' + thing.data.reduce((str, val) => str+", "+kePetik(v, val), "").slice(1) + ' ]';
     } else if (thing.type === stipeSymbol) {
         return `Model<${thing.symbol.description}>`;
     } else if (thing.type === mesinSymbol) {
@@ -56,7 +53,7 @@ export function kePetik(v, thing) {
     } else if (thing.type === angkaSymbol) {
         return thing.data.toString();
     } else if (thing.type === petikSymbol) {
-        return '"' + thing.data + '"';
+        return thing.data;
     } else {
         if (!thing?.type) return `nihil`;
         let type = v.environment.get(thing.type.description);
@@ -70,8 +67,8 @@ export function kePetik(v, thing) {
 
 class PetikTipe extends Stipe {
     constructor() {
-        super(petikSymbol, new Callable(null, (v, args) => new Value(petikSymbol, kePetik(v, args[0])), 
-            [[null]], petikSymbol, true) );
+        super(petikSymbol, new Callable(null, (v, args) => new Value(petikSymbol, kePetik(v, args[0])),
+            [[null]], petikSymbol, true));
         this.init();
     }
 
@@ -99,7 +96,7 @@ class PetikTipe extends Stipe {
         this.member.define("SERU_UNER",
             makeBuiltInFunc([petikSymbol], logisSymbol, (_, [r]) => new Value(logisSymbol, !Boolean(r.data))));
 
-        this.member.define("kePetik", 
+        this.member.define("kePetik",
             makeBuiltInFunc([petikSymbol], petikSymbol, (v, [p]) => new Value(petikSymbol, kePetik(v, p))));
 
         this.member.define("pisah", makeBuiltInFunc([petikSymbol, petikSymbol], barisSymbol, (_, [d, sep]) => {
@@ -181,7 +178,7 @@ class AngkaTipe extends Stipe {
         this.member.define("MINUS_UNER",
             makeBuiltInFunc([angkaSymbol], angkaSymbol, (_, [r]) => new Value(angkaSymbol, -r.data)));
 
-        this.member.define("kePetik", 
+        this.member.define("kePetik",
             makeBuiltInFunc([angkaSymbol], petikSymbol, (v, [a]) => new Value(petikSymbol, kePetik(v, a))));
 
         this.member.define("bulat", makeBuiltInFunc([angkaSymbol], angkaSymbol, (_, [a]) => {
@@ -220,7 +217,7 @@ class LogisTipe extends Stipe {
         this.member.define("SERU_UNER",
             makeBuiltInFunc([logisSymbol], logisSymbol, (_, [r]) => new Value(logisSymbol, !Boolean(r.data))));
 
-        this.member.define("kePetik", 
+        this.member.define("kePetik",
             makeBuiltInFunc([logisSymbol], petikSymbol, (v, [l]) => new Value(petikSymbol, kePetik(v, l))));
     }
 }
@@ -276,7 +273,7 @@ class BarisTipe extends Stipe {
         this.member.define("SERU_UNER",
             makeBuiltInFunc([barisSymbol], logisSymbol, (_, [r]) => new Value(logisSymbol, !Boolean(r.data))));
 
-        this.member.define("kePetik", 
+        this.member.define("kePetik",
             makeBuiltInFunc([barisSymbol], petikSymbol, (v, [p]) => new Value(petikSymbol, kePetik(v, p))));
 
         this.member.define("hapus", makeBuiltInFunc([barisSymbol, angkaSymbol], barisSymbol, (v, [b, i]) => {
@@ -338,7 +335,7 @@ class BarisTipe extends Stipe {
 
         this.member.define("punya?", makeBuiltInFunc([barisSymbol, null], logisSymbol, (v, [b, d]) => {
             let type = v.environment.get(d.type?.description);
-            if (!type) 
+            if (!type)
                 v.error(`Tipe tidak ditemukan atau tidak valid`);
             let equalFunc;
             if (type.member?.has("SAMA_SAMA")) {
@@ -360,7 +357,7 @@ class MesinTipe extends Stipe {
     constructor() {
         super(mesinSymbol);
 
-        this.member.define("kePetik", 
+        this.member.define("kePetik",
             makeBuiltInFunc([mesinSymbol], petikSymbol, (v, [m]) => new Value(petikSymbol, kePetik(v, m))));
     }
 }
@@ -386,7 +383,7 @@ export class Model extends Stipe {
                     val.type = args[i].type;
                 } else if (args[i].type !== symbol) {
                     v.line = callLine;
-                    v.error(`Argumen pembuatan objek tidak sama dengan argumen model, menemukan ${args[i].type?.description}, mengharapkan ${symbol ? symbol.description : "nihil" }`);
+                    v.error(`Argumen pembuatan objek tidak sama dengan argumen model, menemukan ${args[i].type?.description}, mengharapkan ${symbol ? symbol.description : "nihil"}`);
                 }
                 val.member = args[i].member;
                 obj.member.define(name, val);
@@ -530,7 +527,7 @@ export const GLOBAL_ENV = (() => {
 
     mtkModul.member.define("kpk", makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (_, [a, b]) => {
         let fpbVal = fpb(a.data, b.data);
-        return new Value(angkaSymbol, a.data*b*data/fpbVal);
+        return new Value(angkaSymbol, a.data * b * data / fpbVal);
     }));
 
     env.define("mtk", mtkModul);

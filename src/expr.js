@@ -133,3 +133,16 @@ export class Index extends ExprBase {
     }
 }
 
+export class PipeLine extends ExprBase {
+    // Expr.ExprBase expr, Expr.ExprBase pipeTo
+    constructor(expr, pipeTo) {
+        super();
+        this.expr = expr;
+        this.pipeTo = pipeTo;
+    }
+
+    visit(visitor) {
+        return visitor.visitPipeLineExpr(this);
+    }
+}
+

@@ -169,6 +169,19 @@ export class Jenis extends StmtBase {
     }
 }
 
+export class Lihat extends StmtBase {
+    // Expr.ExprBase expr, Array<Expr.ExprBase-Stmt.Block> cases
+    constructor(expr, cases) {
+        super();
+        this.expr = expr;
+        this.cases = cases;
+    }
+
+    visit(visitor) {
+        return visitor.visitLihatStmt(this);
+    }
+}
+
 export class Model extends StmtBase {
     // Token name, Array<Stmt.Type-Token> contents
     constructor(name, contents) {

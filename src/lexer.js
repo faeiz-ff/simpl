@@ -163,6 +163,8 @@ export class Lexer {
         if (this.isNumeric(this.see())) return this.number();
 
         switch (this.see()) {
+            case "$": return this.makeToken(TokenType.DOLLAR);
+            case ":": return this.makeToken(TokenType.COLON);
             case "+": return this.makeToken(TokenType.PLUS);
             case "-": return this.makeToken(TokenType.MINUS);
             case "/": return this.makeToken(TokenType.SLASH);
@@ -175,7 +177,12 @@ export class Lexer {
             case "}": return this.makeToken(TokenType.RCURLY);
             case "[": return this.makeToken(TokenType.LSQUARE);
             case "]": return this.makeToken(TokenType.RSQUARE);
-            case "|": return this.makeToken(TokenType.PIPE);
+            case "|": 
+                if (this.peek() === ">") {
+                    this.advance();
+                    return this.makeToken(TokenType.PIPELINE);
+                }
+                return this.makeToken(TokenType.PIPE);
             case "&": return this.makeToken(TokenType.AMPERSAND);
             case "%": return this.makeToken(TokenType.MODULUS);
             case "!":

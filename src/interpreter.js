@@ -31,6 +31,7 @@ export class Interpreter {
         this.output = [];
         this.objectStack = null;
         this.exprWillBeCalled = false;
+        this.pipeStack = [];
     }
 
     // EXPRESSION VISITORS
@@ -263,6 +264,14 @@ export class Interpreter {
     }
 
     visitIdentifierExpr(identifierExpr) {
+        if (identifierExpr.token.lexeme === "$") {
+            this.line = identifierExpr.token.line;
+            if (this.pipeStack.length <= 0) {
+                this.error(`$ hanya ada dalam ekspresi saluran.`);
+            } else {
+                return this.pipeStack[this.pipeStack.length - 1];
+            }
+        }
         let value = this.environment.get(identifierExpr.token.lexeme);
         this.line = identifierExpr.token.line;
         if (!value) this.error(`'${identifierExpr.token.lexeme}' tidak dapat ditemukan.`);
@@ -291,6 +300,18 @@ export class Interpreter {
         } else {
             return main.member.get(name);
         }
+    }
+
+    visitPipeLineExpr (pipeLineExpr) {
+        let expr = this.validValue(pipeLineExpr.expr.accept(this));
+
+        this.pipeStack.push(expr);
+
+        let pipeValue = this.validValue(pipeLineExpr.pipeTo.accept(this));
+
+        this.pipeStack.pop();
+
+        return pipeValue;
     }
 
     // STATEMENT VISITORS
@@ -481,6 +502,28 @@ export class Interpreter {
         let name = this.validName(jenisStmt.name.lexeme);
         this.line = jenisStmt.name.line;
         this.environment.define(name, new Value.Jenis(name, jenisStmt.enums));
+    }
+
+    visitLihatStmt(lihatStmt) {
+        let match = this.validValue(lihatStmt.expr.accept(this));
+        let matchType = this.environment.get(match?.type?.description);
+        if (!matchType?.member?.has("SAMA_SAMA")) {
+            this.error(`tipe ${matchType ? match.type.description : "nihil"} tidak mempunyai mesin SAMA_SAMA.`);
+        }
+        let equalFunc = matchType.member.get("SAMA_SAMA");
+        
+        for (let someCase of lihatStmt.cases) {
+            if (!someCase[0]) {
+                someCase[1].accept(this);
+                return;
+            } 
+            let expr = someCase[0].accept(this);
+            let isEqual = this.callFunc(equalFunc.data, [match, expr]);
+            if (isEqual.data) {
+                someCase[1].accept(this);
+                return;
+            } 
+        }
     }
 
     visitSimplStmt(simpl) {

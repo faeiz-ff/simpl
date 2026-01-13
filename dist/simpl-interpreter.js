@@ -92,10 +92,7 @@ function kePetik(v, thing) {
     if (thing.type === logisSymbol) {
         return thing.data ? "benar" : "salah";
     } else if (thing.type === barisSymbol) {
-        return '[' + thing.data.reduce((str, val) => {
-            let item = kePetik(v, val);
-            return str + ", " + (val.type === Value.petikSymbol ? `"${item}"` : item);
-        }, "").slice(1) + ' ]';
+        return '[' + thing.data.reduce((str, val) => str+", "+kePetik(v, val), "").slice(1) + ' ]';
     } else if (thing.type === stipeSymbol) {
         return `Model<${thing.symbol.description}>`;
     } else if (thing.type === mesinSymbol) {
@@ -104,7 +101,7 @@ function kePetik(v, thing) {
     } else if (thing.type === angkaSymbol) {
         return thing.data.toString();
     } else if (thing.type === petikSymbol) {
-        return '"' + thing.data + '"';
+        return thing.data;
     } else {
         if (!thing?.type) return `nihil`;
         let type = v.environment.get(thing.type.description);
@@ -118,8 +115,8 @@ function kePetik(v, thing) {
 
 class PetikTipe extends Stipe {
     constructor() {
-        super(petikSymbol, new Callable(null, (v, args) => new Value(petikSymbol, kePetik(v, args[0])), 
-            [[null]], petikSymbol, true) );
+        super(petikSymbol, new Callable(null, (v, args) => new Value(petikSymbol, kePetik(v, args[0])),
+            [[null]], petikSymbol, true));
         this.init();
     }
 
@@ -147,7 +144,7 @@ class PetikTipe extends Stipe {
         this.member.define("SERU_UNER",
             makeBuiltInFunc([petikSymbol], logisSymbol, (_, [r]) => new Value(logisSymbol, !Boolean(r.data))));
 
-        this.member.define("kePetik", 
+        this.member.define("kePetik",
             makeBuiltInFunc([petikSymbol], petikSymbol, (v, [p]) => new Value(petikSymbol, kePetik(v, p))));
 
         this.member.define("pisah", makeBuiltInFunc([petikSymbol, petikSymbol], barisSymbol, (_, [d, sep]) => {
@@ -229,7 +226,7 @@ class AngkaTipe extends Stipe {
         this.member.define("MINUS_UNER",
             makeBuiltInFunc([angkaSymbol], angkaSymbol, (_, [r]) => new Value(angkaSymbol, -r.data)));
 
-        this.member.define("kePetik", 
+        this.member.define("kePetik",
             makeBuiltInFunc([angkaSymbol], petikSymbol, (v, [a]) => new Value(petikSymbol, kePetik(v, a))));
 
         this.member.define("bulat", makeBuiltInFunc([angkaSymbol], angkaSymbol, (_, [a]) => {
@@ -268,7 +265,7 @@ class LogisTipe extends Stipe {
         this.member.define("SERU_UNER",
             makeBuiltInFunc([logisSymbol], logisSymbol, (_, [r]) => new Value(logisSymbol, !Boolean(r.data))));
 
-        this.member.define("kePetik", 
+        this.member.define("kePetik",
             makeBuiltInFunc([logisSymbol], petikSymbol, (v, [l]) => new Value(petikSymbol, kePetik(v, l))));
     }
 }
@@ -324,7 +321,7 @@ class BarisTipe extends Stipe {
         this.member.define("SERU_UNER",
             makeBuiltInFunc([barisSymbol], logisSymbol, (_, [r]) => new Value(logisSymbol, !Boolean(r.data))));
 
-        this.member.define("kePetik", 
+        this.member.define("kePetik",
             makeBuiltInFunc([barisSymbol], petikSymbol, (v, [p]) => new Value(petikSymbol, kePetik(v, p))));
 
         this.member.define("hapus", makeBuiltInFunc([barisSymbol, angkaSymbol], barisSymbol, (v, [b, i]) => {
@@ -386,7 +383,7 @@ class BarisTipe extends Stipe {
 
         this.member.define("punya?", makeBuiltInFunc([barisSymbol, null], logisSymbol, (v, [b, d]) => {
             let type = v.environment.get(d.type?.description);
-            if (!type) 
+            if (!type)
                 v.error(`Tipe tidak ditemukan atau tidak valid`);
             let equalFunc;
             if (type.member?.has("SAMA_SAMA")) {
@@ -408,7 +405,7 @@ class MesinTipe extends Stipe {
     constructor() {
         super(mesinSymbol);
 
-        this.member.define("kePetik", 
+        this.member.define("kePetik",
             makeBuiltInFunc([mesinSymbol], petikSymbol, (v, [m]) => new Value(petikSymbol, kePetik(v, m))));
     }
 }
@@ -434,7 +431,7 @@ let Model$1 = class Model extends Stipe {
                     val.type = args[i].type;
                 } else if (args[i].type !== symbol) {
                     v.line = callLine;
-                    v.error(`Argumen pembuatan objek tidak sama dengan argumen model, menemukan ${args[i].type?.description}, mengharapkan ${symbol ? symbol.description : "nihil" }`);
+                    v.error(`Argumen pembuatan objek tidak sama dengan argumen model, menemukan ${args[i].type?.description}, mengharapkan ${symbol ? symbol.description : "nihil"}`);
                 }
                 val.member = args[i].member;
                 obj.member.define(name, val);
@@ -578,7 +575,7 @@ const GLOBAL_ENV = (() => {
 
     mtkModul.member.define("kpk", makeBuiltInFunc([angkaSymbol, angkaSymbol], angkaSymbol, (_, [a, b]) => {
         let fpbVal = fpb(a.data, b.data);
-        return new Value(angkaSymbol, a.data*b*data/fpbVal);
+        return new Value(angkaSymbol, a.data * b * data / fpbVal);
     }));
 
     env.define("mtk", mtkModul);
@@ -600,12 +597,14 @@ const RESERVED_KEYWORDS = [
     "datum",
     "jenis",
     "model",
-    "error",
     "tetap",
     "modul",
+    "lihat",
+    "kasus",
 ];
 
-const RUBAH = 0,
+const
+    RUBAH = 0,
     KALAU = 1,
     NAMUN = 2,
     SLAGI = 3,
@@ -619,35 +618,40 @@ const RUBAH = 0,
     DATUM = 11,
     JENIS = 12,
     MODEL = 13,
-    TETAP = 15,
-    MODUL = 16,
-    EOF = 17,
-    ID = 18,
-    LITERAL = 19,
-    PLUS = 20,
-    MINUS = 21,
-    STAR = 22,
-    SLASH = 23,
-    LPAREN = 24,
-    RPAREN = 25,
-    GREATER = 26,
-    GREATER_EQUAL = 27,
-    LESS = 28,
-    LESS_EQUAL = 29,
-    EQUAL = 30,
-    EQUAL_EQUAL = 31,
-    DOT = 32,
-    LCURLY = 33,
-    RCURLY = 34,
-    COMMA = 35,
-    LSQUARE = 36,
-    RSQUARE = 37,
-    PIPE = 38,
-    AMPERSAND = 39,
-    BANG = 40,
-    ARROW = 41,
-    BANG_EQUAL = 42,
-    MODULUS = 43;
+    TETAP = 14,
+    MODUL = 15,
+    LIHAT = 16,
+    KASUS = 17,
+    EOF = 18,
+    ID = 19,
+    LITERAL = 20,
+    PLUS = 21,
+    MINUS = 22,
+    STAR = 23,
+    SLASH = 24,
+    LPAREN = 25,
+    RPAREN = 26,
+    GREATER = 27,
+    GREATER_EQUAL = 28,
+    LESS = 29,
+    LESS_EQUAL = 30,
+    EQUAL = 31,
+    EQUAL_EQUAL = 32,
+    DOT = 33,
+    LCURLY = 34,
+    RCURLY = 35,
+    COMMA = 36,
+    LSQUARE = 37,
+    RSQUARE = 38,
+    PIPE = 39,
+    AMPERSAND = 40,
+    BANG = 41,
+    ARROW = 42,
+    BANG_EQUAL = 43,
+    MODULUS = 44,
+    PIPELINE = 45,
+    COLON = 46,
+    DOLLAR = 47;
 
 const TOKEN_STRING = [
     "RUBAH",
@@ -664,9 +668,10 @@ const TOKEN_STRING = [
     "DATUM",
     "JENIS",
     "MODEL",
-    "ERROR",
     "TETAP",
     "MODUL",
+    "LIHAT",
+    "KASUS",
     "EOF",
     "ID",
     "LITERAL",
@@ -694,6 +699,9 @@ const TOKEN_STRING = [
     "ARROW",
     "SERU_SAMA",
     "MODULUS",
+    "PIPELINE",
+    "COLON",
+    "DOLLAR",
 ];
 
 let Henti$1 = class Henti { };
@@ -724,6 +732,7 @@ class Interpreter {
         this.output = [];
         this.objectStack = null;
         this.exprWillBeCalled = false;
+        this.pipeStack = [];
     }
 
     // EXPRESSION VISITORS
@@ -956,6 +965,14 @@ class Interpreter {
     }
 
     visitIdentifierExpr(identifierExpr) {
+        if (identifierExpr.token.lexeme === "$") {
+            this.line = identifierExpr.token.line;
+            if (this.pipeStack.length <= 0) {
+                this.error(`$ hanya ada dalam ekspresi saluran.`);
+            } else {
+                return this.pipeStack[this.pipeStack.length - 1];
+            }
+        }
         let value = this.environment.get(identifierExpr.token.lexeme);
         this.line = identifierExpr.token.line;
         if (!value) this.error(`'${identifierExpr.token.lexeme}' tidak dapat ditemukan.`);
@@ -984,6 +1001,18 @@ class Interpreter {
         } else {
             return main.member.get(name);
         }
+    }
+
+    visitPipeLineExpr (pipeLineExpr) {
+        let expr = this.validValue(pipeLineExpr.expr.accept(this));
+
+        this.pipeStack.push(expr);
+
+        let pipeValue = this.validValue(pipeLineExpr.pipeTo.accept(this));
+
+        this.pipeStack.pop();
+
+        return pipeValue;
     }
 
     // STATEMENT VISITORS
@@ -1174,6 +1203,28 @@ class Interpreter {
         let name = this.validName(jenisStmt.name.lexeme);
         this.line = jenisStmt.name.line;
         this.environment.define(name, new Jenis$1(name, jenisStmt.enums));
+    }
+
+    visitLihatStmt(lihatStmt) {
+        let match = this.validValue(lihatStmt.expr.accept(this));
+        let matchType = this.environment.get(match?.type?.description);
+        if (!matchType?.member?.has("SAMA_SAMA")) {
+            this.error(`tipe ${matchType ? match.type.description : "nihil"} tidak mempunyai mesin SAMA_SAMA.`);
+        }
+        let equalFunc = matchType.member.get("SAMA_SAMA");
+        
+        for (let someCase of lihatStmt.cases) {
+            if (!someCase[0]) {
+                someCase[1].accept(this);
+                return;
+            } 
+            let expr = someCase[0].accept(this);
+            let isEqual = this.callFunc(equalFunc.data, [match, expr]);
+            if (isEqual.data) {
+                someCase[1].accept(this);
+                return;
+            } 
+        }
     }
 
     visitSimplStmt(simpl) {
@@ -1432,6 +1483,8 @@ class Lexer {
         if (this.isNumeric(this.see())) return this.number();
 
         switch (this.see()) {
+            case "$": return this.makeToken(DOLLAR);
+            case ":": return this.makeToken(COLON);
             case "+": return this.makeToken(PLUS);
             case "-": return this.makeToken(MINUS);
             case "/": return this.makeToken(SLASH);
@@ -1444,7 +1497,12 @@ class Lexer {
             case "}": return this.makeToken(RCURLY);
             case "[": return this.makeToken(LSQUARE);
             case "]": return this.makeToken(RSQUARE);
-            case "|": return this.makeToken(PIPE);
+            case "|": 
+                if (this.peek() === ">") {
+                    this.advance();
+                    return this.makeToken(PIPELINE);
+                }
+                return this.makeToken(PIPE);
             case "&": return this.makeToken(AMPERSAND);
             case "%": return this.makeToken(MODULUS);
             case "!":
@@ -1631,6 +1689,19 @@ class Index extends ExprBase {
     }
 }
 
+class PipeLine extends ExprBase {
+    // Expr.ExprBase expr, Expr.ExprBase pipeTo
+    constructor(expr, pipeTo) {
+        super();
+        this.expr = expr;
+        this.pipeTo = pipeTo;
+    }
+
+    visit(visitor) {
+        return visitor.visitPipeLineExpr(this);
+    }
+}
+
 class StmtBase {
     accept(visitor) {
         return this.visit(visitor);
@@ -1801,6 +1872,19 @@ class Jenis extends StmtBase {
     }
 }
 
+class Lihat extends StmtBase {
+    // Expr.ExprBase expr, Array<Expr.ExprBase-Stmt.Block> cases
+    constructor(expr, cases) {
+        super();
+        this.expr = expr;
+        this.cases = cases;
+    }
+
+    visit(visitor) {
+        return visitor.visitLihatStmt(this);
+    }
+}
+
 class Model extends StmtBase {
     // Token name, Array<Stmt.Type-Token> contents
     constructor(name, contents) {
@@ -1888,6 +1972,10 @@ class Parser {
     }
 
     blockStmt() {
+        if (this.match(COLON)) {
+            return new Block([this.statement()]);
+        }
+        this.eat(LCURLY, `Mengharapkan sebuah blok.`);
         let statements = [];
         while (!this.match(RCURLY)) {
             statements.push(this.statement());
@@ -1912,25 +2000,25 @@ class Parser {
 
     lambda() {
         let params = [];
-        this.eat(LPAREN, "Mengharapkan '(' setelah '=>' untuk deklarasi Lamda.");
+        this.eat(LPAREN, "Mengharapkan '(' setelah '=>' untuk deklarasi objek `mesin`.");
 
         if (this.match(ID, DATUM)) {
             let type = this.typeStmt();
-            this.eat(ID, "Mengharapkan Nama parameter setelah deklarasi Tipe parameter dalam Lamda.");
+            this.eat(ID, "Mengharapkan Nama parameter setelah deklarasi Tipe parameter dalam objek `mesin`.");
             let name = this.previous();
             params.push([type, name]);
 
             while (this.match(COMMA)) {
                 if (!this.match(ID, DATUM))
-                    this.error("Mengharapkan Tipe parameter setelah koma dalam Lamda.");
+                    this.error("Mengharapkan Tipe parameter setelah koma dalam objek `mesin`.");
                 let type = this.typeStmt();
-                this.eat(ID, "Mengharapkan Nama parameter setelah deklarasi Tipe parameter dalam Lamda.");
+                this.eat(ID, "Mengharapkan Nama parameter setelah deklarasi Tipe parameter dalam objek `mesin`.");
                 let name = this.previous();
                 params.push([type, name]);
             }
         }
         // deepPrint(params);
-        this.eat(RPAREN, "Mengharapkan ')' setelah deklarasi parameter Lamda.");
+        this.eat(RPAREN, "Mengharapkan ')' setelah deklarasi parameter objek `mesin`.");
         let returnType = null;
         if (this.match(ID, DATUM)) {
             returnType = this.typeStmt();
@@ -1940,7 +2028,6 @@ class Parser {
             }
             returnType = null;
         }
-        this.eat(LCURLY, "Mengharapkan Blok { } untuk Lamda.");
         let block = this.blockStmt();
 
         return new Lambda(params, returnType, block);
@@ -1978,7 +2065,7 @@ class Parser {
             return new Grouping(expr);
         } else if (this.match(LITERAL)) {
             return new Literal(this.previous());
-        } else if (this.match(ID)) {
+        } else if (this.match(ID, DOLLAR)) {
             return this.identifier();
         } else if (this.match(ARROW)) {
             return this.lambda();
@@ -2022,7 +2109,7 @@ class Parser {
     }
 
     member(parent) {
-        this.eat(ID, "Mengharapkan Nama member setelah '.'.");
+        this.eat(ID, "Mengharapkan Nama variabel setelah '.'.");
         let id = this.identifier();
         return new Member(parent, id);
     }
@@ -2087,8 +2174,19 @@ class Parser {
         return expr;
     }
 
+    pipeLine() {
+        let expr = this.orTerm();
+
+        while (this.match(PIPELINE)) {
+            let pipeTo = this.orTerm();
+            expr = new PipeLine(expr, pipeTo);
+        }
+
+        return expr;
+    }
+
     expression() {
-        return this.orTerm();
+        return this.pipeLine();
     }
 
     cetakStmt() {
@@ -2146,19 +2244,16 @@ class Parser {
             this.error("Mengharapkan ekspresi setelah 'kalau'.");
         }
         let condition = this.expression();
-        this.eat(LCURLY, "Mengharapkan blok { } setelah kondisi untuk pernyataan 'kalau'.");
         let block = this.blockStmt();
         let elseKalau = null;
 
         if (this.match(NAMUN)) {
             if (this.match(KALAU)) {
                 elseKalau = this.kalauStmt();
-            } else if (this.match(LCURLY)) {
+            } else {
                 let elseCond = null;
                 let elseBlock = this.blockStmt();
                 elseKalau = new Kalau(elseCond, elseBlock);
-            } else {
-                this.error("Mengharapkan sebuah 'kalau' atau blok { } setelah 'namun'.");
             }
         }
 
@@ -2176,7 +2271,6 @@ class Parser {
 
         let iterable = this.expression();
 
-        this.eat(LCURLY, "Mengharapkan Blok { } setelah kondisi pada pernyataan 'untuk'.");
         let block = this.blockStmt();
 
         return new Untuk(varType, varName, iterable, block);
@@ -2185,7 +2279,6 @@ class Parser {
     slagiStmt() {
         let condition = this.expression();
 
-        this.eat(LCURLY, "Mengharapkan Blok { } setelah kondisi pada pernyataan 'slagi'.");
         let block = this.blockStmt();
 
         return new Slagi(condition, block);
@@ -2228,6 +2321,23 @@ class Parser {
         return new Jenis(id, enums);
     }
 
+    lihatStmt() {
+        let expr = this.expression();
+        let cases = [];
+        if (!this.check(KASUS)) {
+            this.error("Mengharapkan `kasus` setelah ekspresi dalam `lihat`.");
+        }
+        while (this.match(KASUS)) {
+            cases.push([this.expression(), this.blockStmt()]);
+        }
+
+        if (this.match(NAMUN)) {
+            cases.push([null, this.blockStmt()]);
+        }
+
+        return new Lihat(expr, cases);
+    }
+
     modelStmt() {
         this.eat(ID, "Mengharapkan Nama Model setelah 'model'.");
         let id = this.previous();
@@ -2240,9 +2350,9 @@ class Parser {
         let contents = [];
         do {
             if (!this.match(ID, DATUM))
-                this.error("Mengharapkan Tipe member dalam deklarasi 'Model'.");
+                this.error("Mengharapkan Tipe variabel dalam deklarasi 'Model'.");
             let type = this.typeStmt();
-            this.eat(ID, "Mengharapkan Nama member dalam deklarasi 'model'.");
+            this.eat(ID, "Mengharapkan Nama variabel dalam deklarasi 'model'.");
             let memberName = this.previous();
 
             contents.push([type, memberName]);
@@ -2256,12 +2366,8 @@ class Parser {
     modulStmt() {
         this.eat(ID, "Mengharapkan Nama modul setelah deklarasi.");
         let token = this.previous();
-        this.eat(LCURLY, "Mengharapkan '{' setelah Nama modul.");
-        let statements = [];
-        while (!this.match(RCURLY)) {
-            statements.push(this.statement());
-        }
-        return new Modul(token, statements);
+        let block = this.blockStmt();
+        return new Modul(token, block.statements);
     }
 
     statement() {
@@ -2273,7 +2379,7 @@ class Parser {
             return new Kerja(this.expression());
         } else if (this.match(KALAU)) {
             return this.kalauStmt();
-        } else if (this.match(LCURLY)) {
+        } else if (this.check(LCURLY)) {
             return this.blockStmt();
         } else if (this.match(UNTUK)) {
             return this.untukStmt();
@@ -2289,6 +2395,8 @@ class Parser {
             return new Hasil(this.expression());
         } else if (this.match(JENIS)) {
             return this.jenisStmt();
+        } else if (this.match(LIHAT)) {
+            return this.lihatStmt();
         } else if (this.match(MODEL)) {
             return this.modelStmt();
         } else if (this.match(MODUL)) {

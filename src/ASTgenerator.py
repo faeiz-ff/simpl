@@ -84,14 +84,14 @@ def main():
         [
             "rubah", "kalau", "namun", "slagi", "untuk", "cetak",
             "henti", "lewat", "dalam", "hasil", "kerja", "datum",
-            "jenis", "model", "error", "tetap", "modul",
+            "jenis", "model", "tetap", "modul", "lihat", "kasus",
         ],
         [
             "eof", "id", "literal", "plus", "minus", "star",
             "slash", "lparen", "rparen", "greater", "greater_equal",
             "less", "less_equal", "equal", "equal_equal", "dot", "lcurly",
             "rcurly", "comma", "lsquare", "rsquare", "pipe", "ampersand",
-            "bang", "arrow", "bang_equal", "modulus"
+            "bang", "arrow", "bang_equal", "modulus", "pipeline", "colon", "dollar", 
         ]
     )
 
@@ -105,7 +105,8 @@ def main():
         "Lambda     : Array<Stmt.Types-Token> params, Stmt.Type returnType, Stmt.Block block",
         "Call       : Expr.ExprBase callable, Expr.ExprBase args",
         "Array      : Array<Expr.ExprBase> contents",
-        "Index      : Expr.ExprBase iterable, Expr.ExprBase index"
+        "Index      : Expr.ExprBase iterable, Expr.ExprBase index",
+        "PipeLine   : Expr.ExprBase expr, Expr.ExprBase pipeTo"
     ])
 
     writeAST("Stmt", [ # Statements should't return anything
@@ -122,6 +123,7 @@ def main():
         "Rubah : Expr.ExprBase variable, Expr.ExprBase value",
         "Hasil : Expr.ExprBase expr", # lol ironic
         "Jenis : Token name, Array<Token> enums",
+        "Lihat : Expr.ExprBase expr, Array<Expr.ExprBase-Stmt.Block> cases",
         "Model : Token name, Array<Stmt.Type-Token> contents",
         "Simpl : Array<Stmt.StmtBase> statements",
         "Modul : Token name, Array<Stmt.StmtBase> statements",
