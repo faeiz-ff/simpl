@@ -5,14 +5,19 @@ import { SimplError, SimplErrorEksekusi } from "./simpl-error.js";
 
 // Simpl: Indonesian Mini Programming Language !!
 
-class Simpl {
-    constructor() {
+export class Simpl {
+    constructor(opts = {
+        keepMemory: false
+    }) {
         this.lexer = new Lexer();
         this.parser = new Parser();
         this.interpreter = new Interpreter();
+        this.keepMemory = opts?.keepMemory ? opts.keepMemory : false;
     }
 
     runCode(text) {
+        if (!this.keepMemory) this.interpreter.init();
+
         // console.log(text.split("\n").reduce((codeStr, line, idx) => codeStr + `${idx + 1}.\t${line}\n`, ''));
         const textLines = text.split("\n");
         try {
@@ -21,7 +26,6 @@ class Simpl {
             let output = this.interpreter.interpret(pohon);
             return output.join("\n");
         } catch (err) {
-            // throw err
             if (err instanceof SimplError) {
                 const errorCode = textLines[err.line - 1];
                 let errorText = (errorCode ? `ERROR! Pada baris ke-${err.line}\n>> ` + errorCode + '\n' : "") + err.message;
@@ -35,8 +39,4 @@ class Simpl {
         }
 
     }
-}
-
-export default function run(code) {
-    return new Simpl().runCode(code);
 }

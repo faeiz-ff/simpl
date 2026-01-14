@@ -14,6 +14,17 @@ export class Parser {
         this.tree = null;
     }
 
+    parse(tokens) {
+        this.init();
+        this.tokens = tokens;
+        let treeList = [];
+        while (!this.match(TokenType.EOF)) {
+            treeList.push(this.statement());
+        }
+        this.tree = new Stmt.Simpl(treeList);
+        return this.tree;
+    }
+
     see() {
         return this.tokens[this.tokenIndex];
     }
@@ -493,14 +504,4 @@ export class Parser {
         throw new SimplErrorStruktur(`Error Struktur => ` + errmsg + ((found) ? ` Menemukan '${this.see().lexeme}'.` : ""), this.see().line);
     }
 
-    parse(tokens) {
-        this.init();
-        this.tokens = tokens;
-        let treeList = [];
-        while (!this.match(TokenType.EOF)) {
-            treeList.push(this.statement());
-        }
-        this.tree = new Stmt.Simpl(treeList);
-        return this.tree;
-    }
 }

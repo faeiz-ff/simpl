@@ -1,7 +1,7 @@
 import { SimplErrorEksekusi } from "./simpl-error.js";
 import { Environment } from "./environment.js";
 import * as Value from "./globals.js";
-import * as TokenType from "./token-type.js";
+import { TOKEN_STRING } from "./token-type.js";
 
 export class Henti { }
 export class Jatuh { }
@@ -12,28 +12,39 @@ export class Hasil {
     }
 }
 
-const location = {
-    GLOBAL: 1,
-    SLAGI: 2,
-    UNTUK: 3,
-    MESIN: 4,
-    LIHAT: 5,
-}
-const MAX_STACK_SIZE = 500;
-
 // Implements all Expressions and Statements Visitor
 export class Interpreter {
     constructor() {
         this.globalEnvironment = Value.GLOBAL_ENV;
+        this.location = {
+            GLOBAL: 1,
+            SLAGI: 2,
+            UNTUK: 3,
+            MESIN: 4,
+            LIHAT: 5,
+        }
+        this.MAX_STACK_SIZE = 500;
+        this.init();
+   }
+
+    init() {
         this.line = 0;
         this.environment = new Environment(this.globalEnvironment);
         this.tree = null;
-        this.state = location.GLOBAL;
+        this.state = this.location.GLOBAL;
         this.stack = [];
         this.output = [];
         this.objectStack = null;
         this.exprWillBeCalled = false;
         this.pipeStack = [];
+    }
+
+    interpret(tree) {
+        this.line = 0;
+        this.output = [];
+        this.tree = tree;
+        tree.accept(this);
+        return this.output;
     }
 
     // EXPRESSION VISITORS
@@ -57,7 +68,7 @@ export class Interpreter {
         let value = new Value.Value(Value.barisSymbol, []);
 
         for (let expr of arrayExpr.contents) {
-            let v = this.validValue(expr.accept(this));
+            let v = expr.accept(this);
             let newVar = new Value.Variable(v.type, false, v.data);
             newVar.member = v.member;
             newVar.isDatum = true;
@@ -125,7 +136,7 @@ export class Interpreter {
             this.error(`Hanya bisa 'memanggil' mesin atau model, malah menemukan ${callable.type.description}. `)
         }
 
-        if (!callable.data?.block) {
+        if (!callable?.data?.block) {
             this.error(`Mesin tidak terdefinisi, tidak bisa dipanggil.`);
         }
 
@@ -136,7 +147,7 @@ export class Interpreter {
             this.objectStack = null;
         }
 
-        args = [...args, ...callExpr.args.map(val => this.validValue(val.accept(this)))];
+        args = [...args, ...callExpr.args.map(val => val.accept(this))];
 
         let result = this.callFunc(callable.data, args);
         return result;
@@ -146,13 +157,16 @@ export class Interpreter {
         // args.forEach((val,idx)=>{
         //     console.log(idx, val);
         // });
+        if (!callable) {
+            this.error(`Mesin tidak terdefinisi, tidak bisa dipanggil.`);
+        }
         this.stack.push(this.line);
-        if (this.stack.length > MAX_STACK_SIZE)
-            this.error(`Rekursi melebihi batas: Lebih dari ${MAX_STACK_SIZE}`);
+        if (this.stack.length > this.MAX_STACK_SIZE)
+            this.error(`Rekursi melebihi batas: Lebih dari ${this.MAX_STACK_SIZE}`);
 
         let prevState = this.state;
         this.line = this.stack[this.stack.length - 1];
-        this.state = location.MESIN;
+        this.state = this.location.MESIN;
 
         if (args.length !== callable.parameters.length) {
             this.error(`Jumlah argumen tidak sama dengan parameter mesin. Menemukan ${args.length}, harusnya ${callable.parameters.length}.`);
@@ -213,8 +227,8 @@ export class Interpreter {
 
 
     visitBinaryExpr(binaryExpr) {
-        let leftValue = this.validValue(binaryExpr.left.accept(this));
-        let rightValue = this.validValue(binaryExpr.right.accept(this));
+        let leftValue = binaryExpr.left.accept(this);
+        let rightValue = binaryExpr.right.accept(this);
 
         this.line = binaryExpr.op.line;
 
@@ -231,7 +245,7 @@ export class Interpreter {
     }
 
     visitUnaryExpr(unaryExpr) {
-        let rightValue = this.validValue(unaryExpr.right.accept(this));
+        let rightValue = unaryExpr.right.accept(this);
 
         this.line = unaryExpr.op.line;
 
@@ -247,7 +261,7 @@ export class Interpreter {
     }
 
     operate(type, op, right, left) {
-        let opLexeme = TokenType.TOKEN_STRING[op] + (left ? "" : "_UNER");
+        let opLexeme = TOKEN_STRING[op] + (left ? "" : "_UNER");
         let operatorFunc = type.member.get(opLexeme);
         if (!operatorFunc)
             this.error(`operator ${opLexeme} tidak terdefinisi untuk Model ${right.type.description}.`);
@@ -262,7 +276,7 @@ export class Interpreter {
     }
 
     visitGroupingExpr(groupingExpr) {
-        return this.validValue(groupingExpr.expr.accept(this));
+        return groupingExpr.expr.accept(this);
     }
 
     visitIdentifierExpr(identifierExpr) {
@@ -305,11 +319,11 @@ export class Interpreter {
     }
 
     visitPipeLineExpr (pipeLineExpr) {
-        let expr = this.validValue(pipeLineExpr.expr.accept(this));
+        let expr = pipeLineExpr.expr.accept(this);
 
         this.pipeStack.push(expr);
 
-        let pipeValue = this.validValue(pipeLineExpr.pipeTo.accept(this));
+        let pipeValue = pipeLineExpr.pipeTo.accept(this);
 
         this.pipeStack.pop();
 
@@ -322,7 +336,8 @@ export class Interpreter {
     visitTypeStmt(typeStmt) {
         if (typeStmt.type === null) return null;
         let type = typeStmt.type.accept(this);
-        if (type.type !== Value.stipeSymbol) this.error(`'${type.type.description}' bukan sebuah Model/Tipe Valid.`);
+        if (type.type !== Value.stipeSymbol || !(type.symbol)) 
+            this.error(`'${type.type.description}' bukan sebuah Model/Tipe Valid.`);
         return type.symbol;
     }
 
@@ -343,7 +358,7 @@ export class Interpreter {
 
         let variable = new Value.Variable(type, datumStmt.type.tetap);
 
-        let value = this.validValue(datumStmt.expr.accept(this));
+        let value = datumStmt.expr.accept(this);
 
         if (value.data === null) value.type = variable.type; // if nihil, ok
 
@@ -366,7 +381,7 @@ export class Interpreter {
         if (variable.tetap) {
             this.error(`Variabel tetap tidak dapat di-rubah.`);
         }
-        let value = this.validValue(rubahStmt.value.accept(this));
+        let value = rubahStmt.value.accept(this);
         if (value.data === null) value.type = variable.type; // if nihil, ok
 
         if (variable.isDatum)
@@ -405,20 +420,20 @@ export class Interpreter {
     }
 
     visitHentiStmt() {
-        if (this.state === location.UNTUK || this.state === location.SLAGI)
+        if (this.state === this.location.UNTUK || this.state === this.location.SLAGI)
             throw new Henti(); // throws exception to escape from deep recursion
         else this.error("Tidak ada pengulangan untuk dihentikan.");
     }
 
 
     visitLewatStmt() {
-        if (this.state === location.UNTUK || this.state === location.SLAGI)
+        if (this.state === this.location.UNTUK || this.state === this.location.SLAGI)
             throw new Lewat(); // throws exception to escape from deep recursion
         else this.error("Tidak ada pengulangan untuk dilewatkan.");
     }
 
     visitJatuhStmt() {
-        if (this.state === location.LIHAT)
+        if (this.state === this.location.LIHAT)
             throw new Jatuh();
         else this.error("Tidak bisa jatuh di luar blok kasus.")
     }
@@ -442,9 +457,9 @@ export class Interpreter {
             this.environment = new Environment(lastEnv);
             try {
                 for (let stmt of slagiStmt.block.statements) {
-                    this.state = location.SLAGI;
+                    this.state = this.location.SLAGI;
                     stmt.accept(this);
-                    this.state = location.SLAGI;
+                    this.state = this.location.SLAGI;
                 }
             } catch (err) {
                 if (err instanceof Henti) {
@@ -455,15 +470,15 @@ export class Interpreter {
             }
         }
         this.environment = lastEnv;
-        if (this.stackNum !== 0) this.state = location.MESIN;
-        else this.state = location.GLOBAL;
+        if (this.stackNum !== 0) this.state = this.location.MESIN;
+        else this.state = this.location.GLOBAL;
     }
 
     visitUntukStmt(untukStmt) {
         let name = this.validName(untukStmt.varName.lexeme, false);
         let type = untukStmt.varType.accept(this);
 
-        let iter = this.validValue(untukStmt.iterable.accept(this));
+        let iter = untukStmt.iterable.accept(this);
         if (iter.type === Value.petikSymbol) {
             iter = new Value.Value(Value.barisSymbol, iter.data.split("").map(str => new Value.Value(Value.petikSymbol, str)));
         }
@@ -484,9 +499,9 @@ export class Interpreter {
             try {
                 // didn't 'accept' the block, just uses it directly
                 for (let stmt of untukStmt.block.statements) {
-                    this.state = location.UNTUK;
+                    this.state = this.location.UNTUK;
                     stmt.accept(this);
-                    this.state = location.UNTUK;
+                    this.state = this.location.UNTUK;
                 }
             } catch (err) {
                 this.environment = untukEnv.enclosing;
@@ -500,8 +515,8 @@ export class Interpreter {
             }
             this.environment = untukEnv.enclosing;
         }
-        if (this.stackNum !== 0) this.state = location.MESIN;
-        else this.state = location.GLOBAL;
+        if (this.stackNum !== 0) this.state = this.location.MESIN;
+        else this.state = this.location.GLOBAL;
     }
 
     visitJenisStmt(jenisStmt) {
@@ -511,7 +526,7 @@ export class Interpreter {
     }
 
     visitLihatStmt(lihatStmt) {
-        let match = this.validValue(lihatStmt.expr.accept(this));
+        let match = lihatStmt.expr.accept(this);
         let matchType = this.environment.get(match?.type?.description);
         if (!matchType?.member?.has("SAMA_SAMA")) {
             this.error(`tipe ${matchType ? match.type.description : "nihil"} tidak mempunyai mesin SAMA_SAMA.`);
@@ -521,9 +536,9 @@ export class Interpreter {
         const handleBlock = (index) => {
             while (index < lihatStmt.cases.length) {
                 try {
-                    this.state = location.LIHAT;
+                    this.state = this.location.LIHAT;
                     lihatStmt.cases[index][1].accept(this);
-                    this.state = location.LIHAT;
+                    this.state = this.location.LIHAT;
                 } catch (err) {
                     if (err instanceof Jatuh) {
                         index++; continue;
@@ -531,8 +546,8 @@ export class Interpreter {
                 }
                 break;
             }
-            if (this.stackNum !== 0) this.state = location.MESIN;
-            else this.state = location.GLOBAL;
+            if (this.stackNum !== 0) this.state = this.location.MESIN;
+            else this.state = this.location.GLOBAL;
         }
         
         for (let i = 0; i < lihatStmt.cases.length; i++) {
@@ -566,7 +581,7 @@ export class Interpreter {
             if (variable.type !== Value.stipeSymbol) {
                 this.error(`Modul hanya bisa _ditambahkan_ pada tipe. '${name}' bukan merupakan tipe.`);
             }
-            if (variable.member.memory.size > 0) {
+            if (variable.member.memory.size > 1) {
                 this.error(`Tipe '${name}' sudah memiliki modul sendiri, tidak bisa definisi ulang.`);
             }
         } else {
@@ -590,6 +605,7 @@ export class Interpreter {
 
     typeCheck(a, b, message) {
         if (a.type !== b.type) {
+            console.log(a, b);
             this.error(`Tipe data tidak sama: ${a.type.description} != ${b.type.description}. ` + message);
         }
     }
@@ -599,11 +615,6 @@ export class Interpreter {
             if (i.data === null || i.type === null) return i;
         }
         return false;
-    }
-
-    validValue(v) {
-        if (v.type !== Value.stipeSymbol) return v;
-        this.error("stipe tidak dapat menjadi nilai.");
     }
 
     validName(n, checkExisted = true) {
@@ -619,11 +630,5 @@ export class Interpreter {
         throw new SimplErrorEksekusi(`Error Eksekusi => ${message}`, this.line, this.output.join('\n'));
     }
 
-    interpret(tree) {
-        this.line = 0;
-        this.output = [];
-        this.tree = tree;
-        tree.accept(this);
-        return this.output;
-    }
+    
 }

@@ -16,6 +16,23 @@ export class Lexer {
         this.errors = [];
     }
 
+    scanTokens(text) {
+        this.init();
+        this.text = text;
+        let tokens = [];
+
+        while (!this.isAtEnd()) {
+            let token = this.scan();
+            this.charStart = this.charIndex;
+            if (token) tokens.push(token);
+        }
+
+        tokens.push(new Token(TokenType.EOF, "Akhir dokumen", null, this.lineIndex));
+
+        this.tokens = tokens;
+        return this.tokens;
+    }
+
     isAtEnd() {
         return this.charIndex >= this.text.length;
     }
@@ -56,23 +73,6 @@ export class Lexer {
 
     parseLexeme() {
         return this.text.slice(this.charStart, this.charIndex);
-    }
-
-    scanTokens(text) {
-        this.init();
-        this.text = text;
-        let tokens = [];
-
-        while (!this.isAtEnd()) {
-            let token = this.scan();
-            this.charStart = this.charIndex;
-            if (token) tokens.push(token);
-        }
-
-        tokens.push(new Token(TokenType.EOF, "Akhir dokumen", null, this.lineIndex));
-
-        this.tokens = tokens;
-        return this.tokens;
     }
 
     id() {
