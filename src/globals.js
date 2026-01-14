@@ -84,6 +84,8 @@ export class Model extends Stipe {
                 if (symbol === null) {
                     val.isDatum = true;
                     val.type = args[i].type;
+                } else if (args[i].data === null) {
+                    // ok
                 } else if (args[i].type !== symbol) {
                     v.line = callLine;
                     v.error(`Argumen pembuatan objek tidak sama dengan argumen model, menemukan ${args[i].type?.description}, mengharapkan ${symbol ? symbol.description : "nihil"}`);
@@ -463,6 +465,34 @@ export const GLOBAL_ENV = (() => {
     env.define("logis", LogisTipe);
     env.define("baris", BarisTipe);
     env.define("mesin", MesinTipe);
+
+    env.define("tulisf", makeBuiltInFunc([null, barisSymbol], null, (v, [d, b]) => {
+        let strTemp = kePetik(v, d);
+        let finalized = "";
+        let formator = b.data.map(value=>kePetik(v, value));
+
+        for (let i = 0; i < strTemp.length; i++) {
+            let ch = strTemp[i];
+            if ( ch !== "{") finalized += ch;
+            else {
+                if (i+1 < strTemp.length && strTemp[i+1] !== "}") {
+                    finalized += "{"; continue;
+                } 
+                i++;
+                if (formator.length === 0) {
+                    v.error("Baris dalam tulisFormat tidak mempunyai cukup elemen!")
+                }
+                finalized += formator.shift();
+            }
+        }
+        v.output.push(finalized);
+        return d;
+    }))
+
+    env.define("tulis", makeBuiltInFunc([null], null, (v, [d]) => {
+        v.output.push(kePetik(v, d));
+        return d;
+    }))
 
     env.define("jarak", makeBuiltInFunc([angkaSymbol, angkaSymbol], barisSymbol,
         (_, [from, to]) => new Value(barisSymbol,

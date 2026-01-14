@@ -24,7 +24,7 @@ export class Simpl {
             let tokens = this.lexer.scanTokens(text);
             let pohon = this.parser.parse(tokens);
             let output = this.interpreter.interpret(pohon);
-            return output.join("\n");
+            return output.join("");
         } catch (err) {
             if (err instanceof SimplError) {
                 const errorCode = textLines[err.line - 1];

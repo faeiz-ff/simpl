@@ -13,7 +13,7 @@ export class Lexer {
         this.charIndex = 0;
         this.lineIndex = 1;
         this.tokens = [];
-        this.errors = [];
+        this.errorLine = 0;
     }
 
     scanTokens(text) {
@@ -117,12 +117,29 @@ export class Lexer {
     }
 
     string() {
+        this.errorLine = this.lineIndex;
         this.advance();
-        while (!this.isAtEnd() && this.see() !== '"') this.advance();
-        if (this.isAtEnd()) this.error("Petik tidak tertutup.");
+        let finalString = "";
+        while (!this.isAtEnd() && this.see() !== '"') {
+            if (this.see() === "\\") {
+                this.advance();
+                if (this.isAtEnd()) break;
+                switch (this.see()) {
+                    case "n":
+                        finalString += "\n"; break;
+                    case "t":
+                        finalString += "\t"; break;
+                     default:
+                        finalString += this.see(); break;
+                }
+            } else finalString += this.see();
+            this.advance();
+        }
+        if (this.isAtEnd()) this.error("Petik tidak tertutup.", this.errorLine);
         this.advance();
         let lexeme = this.parseLexeme();
-        return new Token(TokenType.LITERAL, lexeme, lexeme.slice(1, lexeme.length - 1), this.lineIndex);
+        // console.log(Array.from(finalString).map(c=>c.charCodeAt(0)))
+        return new Token(TokenType.LITERAL, lexeme, finalString, this.lineIndex);
     }
 
     comment() {
@@ -224,8 +241,8 @@ export class Lexer {
         this.error(`karakter tidak valid: Menemukan '${this.see()}'.`);
     }
 
-    error(errmsg) {
-        throw new SimplErrorTulisan(`Error Tulisan => ` + errmsg, this.see().line);
+    error(errmsg, line = -1) {
+        throw new SimplErrorTulisan(`Error Tulisan => ` + errmsg, line === -1 ? this.see().line : line);
     }
 
     debugPrintTokens(tokens) {
