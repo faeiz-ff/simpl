@@ -213,6 +213,29 @@ const PetikTipe = (() => {
     tipe.member.define("kecil", makeBuiltInFunc([petikSymbol], petikSymbol, (_, [p]) => {
         return new Value(petikSymbol, p.data.toLowerCase())
     }));
+    tipe.member.define("format", makeBuiltInFunc([petikSymbol, barisSymbol], petikSymbol, (v, [p, b]) => {
+        // THERES ANOTHER ONE ON TULISF MESIN GLOBAL
+        let strTemp = p.data;
+        let finalized = "";
+        let formator = b.data.map(value=>kePetik(v, value));
+
+        for (let i = 0; i < strTemp.length; i++) {
+            let ch = strTemp[i];
+            if ( ch !== "{") finalized += ch;
+            else {
+                if (i+1 < strTemp.length && strTemp[i+1] !== "}") {
+                    finalized += "{"; continue;
+                } 
+                i++;
+                if (formator.length === 0) {
+                    v.error("Baris dalam tulisFormat tidak mempunyai cukup elemen!")
+                }
+                finalized += formator.shift();
+            }
+        }
+        return new Value(petikSymbol, finalized);
+
+    }));
 
     return tipe;
 })();
@@ -467,6 +490,7 @@ export const GLOBAL_ENV = (() => {
     env.define("mesin", MesinTipe);
 
     env.define("tulisf", makeBuiltInFunc([null, barisSymbol], null, (v, [d, b]) => {
+        // THERES ANOTHER ONE ON PETIK.FORMAT
         let strTemp = kePetik(v, d);
         let finalized = "";
         let formator = b.data.map(value=>kePetik(v, value));

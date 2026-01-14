@@ -81,6 +81,10 @@ export class Interpreter {
     visitIndexExpr(indexExpr) {
         // a real TODO would've been to implement real iterables
         let iterable = indexExpr.iterable.accept(this);
+        if (!iterable || iterable.data === null) {
+            this.error("Objek bernilai nihil, tidak dapat mengindeksnya.")
+        }
+
         if (iterable.type === Value.petikSymbol) {
             iterable = new Value.Value(Value.barisSymbol, iterable.data.split("").map(str => new Value.Value(Value.petikSymbol, str)));
         }
@@ -265,7 +269,7 @@ export class Interpreter {
         let opLexeme = TOKEN_STRING[op] + (left ? "" : "_UNER");
         let operatorFunc = type.member.get(opLexeme);
         if (!operatorFunc)
-            this.error(`operator ${opLexeme} tidak terdefinisi untuk Model ${right.type.description}.`);
+            this.error(`Operator ${opLexeme} tidak terdefinisi untuk Model ${right.type.description}.`);
 
         let result = null;
         if (left) { // Binary
@@ -299,19 +303,22 @@ export class Interpreter {
         let willBeCalled = this.exprWillBeCalled;
         this.exprWillBeCalled = false;
         let main = memberExpr.main.accept(this);
+        if (!main || main.data === null) {
+            this.error("Objek bernilai nihil, tidak dapat mengaksesnya.")
+        }
         let name = memberExpr.member.token.lexeme;
         this.line = memberExpr.member.token.line;
         if (!main?.member || !main.member.has(name)) {
             const type = this.environment.get(main.type.description);
             if (!type) {
-                this.error(`nama .${name} tidak ditemukan.`);
+                this.error(`Nama .${name} tidak ditemukan.`);
             }
             if (type.member?.has(name)) {
                 if (willBeCalled) {
                     this.objectStack = main;
                     return type.member.get(name);
                 }
-                this.error(`akses titik . dari objek ke model harus berupa panggilan/penggunaaan mesin.`);
+                this.error(`Akses titik . dari objek ke model harus berupa panggilan/penggunaaan mesin.`);
             }
             this.error(`nama .${name} tidak ditemukan dalam tipe ${main.type.description}`);
         } else {
@@ -529,7 +536,7 @@ export class Interpreter {
         let match = lihatStmt.expr.accept(this);
         let matchType = this.environment.get(match?.type?.description);
         if (!matchType?.member?.has("SAMA_SAMA")) {
-            this.error(`tipe ${matchType ? match.type.description : "nihil"} tidak mempunyai mesin SAMA_SAMA.`);
+            this.error(`Tipe ${matchType ? match.type.description : "nihil"} tidak mempunyai mesin SAMA_SAMA.`);
         }
         let equalFunc = matchType.member.get("SAMA_SAMA");
 
