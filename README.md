@@ -58,7 +58,7 @@ cetak "Halo Dunia!"
     - Menjalankan `simpl` dan mencetak output programnya ke layar.
 
 ## Contoh `simpl`
-Tur lebih lengkap ada dalam [Tur Sintaks Simpl](https://github.com/faeiz-ff/simpl/blob/main/docs/tur.md)
+Tur lebih lengkap ada dalam [Tur Sintaks Simpl](https://github.com/faeiz-ff/simpl/blob/main/docs/tur-sintaks.md)
 - `mesin` akar dua
 ```simpl
 mesin akar2 ==> (angka n) {
