@@ -47,6 +47,8 @@ cetak "Halo Dunia!"
 `));
 ```
 
+\*Hati-hati terhadap karakter garis miring belakang ( \ ) dalam javascript string, `simpl` dapat memproses karakter \\n \\t dan \\", jadi dalam string javascript, anda harus menulisnya dua kali => \\\\n
+
 ## API
 
 `class Simpl(opts?: { keepMemory?: boolean })`:

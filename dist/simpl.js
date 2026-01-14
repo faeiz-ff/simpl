@@ -132,7 +132,7 @@ let Model$1 = class Model extends Stipe {
                 if (symbol === null) {
                     val.isDatum = true;
                     val.type = args[i].type;
-                } else if (args[i].type !== symbol) {
+                } else if (args[i].data === null) ; else if (args[i].type !== symbol) {
                     v.line = callLine;
                     v.error(`Argumen pembuatan objek tidak sama dengan argumen model, menemukan ${args[i].type?.description}, mengharapkan ${symbol ? symbol.description : "nihil"}`);
                 }
@@ -512,6 +512,34 @@ const GLOBAL_ENV = (() => {
     env.define("baris", BarisTipe);
     env.define("mesin", MesinTipe);
 
+    env.define("tulisf", makeBuiltInFunc([null, barisSymbol], null, (v, [d, b]) => {
+        let strTemp = kePetik(v, d);
+        let finalized = "";
+        let formator = b.data.map(value=>kePetik(v, value));
+
+        for (let i = 0; i < strTemp.length; i++) {
+            let ch = strTemp[i];
+            if ( ch !== "{") finalized += ch;
+            else {
+                if (i+1 < strTemp.length && strTemp[i+1] !== "}") {
+                    finalized += "{"; continue;
+                } 
+                i++;
+                if (formator.length === 0) {
+                    v.error("Baris dalam tulisFormat tidak mempunyai cukup elemen!");
+                }
+                finalized += formator.shift();
+            }
+        }
+        v.output.push(finalized);
+        return d;
+    }));
+
+    env.define("tulis", makeBuiltInFunc([null], null, (v, [d]) => {
+        v.output.push(kePetik(v, d));
+        return d;
+    }));
+
     env.define("jarak", makeBuiltInFunc([angkaSymbol, angkaSymbol], barisSymbol,
         (_, [from, to]) => new Value(barisSymbol,
             Array(Math.abs(Math.floor(to.data - from.data)))
@@ -872,6 +900,7 @@ class Interpreter {
             let type = callable.parameters[i][0];
 
             if (type === null) continue;
+            if (args[i].data !== null) continue;
             if (args[i].type !== type) {
                 this.line = callLineNum;
                 this.error(`Tipe argumen tidak sama dengan parameter. Menemukan ${args[i].type.description}, harusnya ${type.description}`);
@@ -1036,8 +1065,7 @@ class Interpreter {
 
     visitCetakStmt(cetakStmt) {
         let result = cetakStmt.expr.accept(this);
-        this.output.push(kePetik(this, result));
-
+        this.output.push(kePetik(this, result) + "\n");
     }
 
     visitKerjaStmt(kerjaStmt) {
@@ -1350,7 +1378,7 @@ class Lexer {
         this.charIndex = 0;
         this.lineIndex = 1;
         this.tokens = [];
-        this.errors = [];
+        this.errorLine = 0;
     }
 
     scanTokens(text) {
@@ -1454,12 +1482,29 @@ class Lexer {
     }
 
     string() {
+        this.errorLine = this.lineIndex;
         this.advance();
-        while (!this.isAtEnd() && this.see() !== '"') this.advance();
-        if (this.isAtEnd()) this.error("Petik tidak tertutup.");
+        let finalString = "";
+        while (!this.isAtEnd() && this.see() !== '"') {
+            if (this.see() === "\\") {
+                this.advance();
+                if (this.isAtEnd()) break;
+                switch (this.see()) {
+                    case "n":
+                        finalString += "\n"; break;
+                    case "t":
+                        finalString += "\t"; break;
+                     default:
+                        finalString += this.see(); break;
+                }
+            } else finalString += this.see();
+            this.advance();
+        }
+        if (this.isAtEnd()) this.error("Petik tidak tertutup.", this.errorLine);
         this.advance();
         let lexeme = this.parseLexeme();
-        return new Token(LITERAL, lexeme, lexeme.slice(1, lexeme.length - 1), this.lineIndex);
+        // console.log(Array.from(finalString).map(c=>c.charCodeAt(0)))
+        return new Token(LITERAL, lexeme, finalString, this.lineIndex);
     }
 
     comment() {
@@ -1561,8 +1606,8 @@ class Lexer {
         this.error(`karakter tidak valid: Menemukan '${this.see()}'.`);
     }
 
-    error(errmsg) {
-        throw new SimplErrorTulisan(`Error Tulisan => ` + errmsg, this.see().line);
+    error(errmsg, line = -1) {
+        throw new SimplErrorTulisan(`Error Tulisan => ` + errmsg, line === -1 ? this.see().line : line);
     }
 
     debugPrintTokens(tokens) {
@@ -2473,7 +2518,7 @@ class Simpl {
             let tokens = this.lexer.scanTokens(text);
             let pohon = this.parser.parse(tokens);
             let output = this.interpreter.interpret(pohon);
-            return output.join("\n");
+            return output.join("");
         } catch (err) {
             if (err instanceof SimplError) {
                 const errorCode = textLines[err.line - 1];
