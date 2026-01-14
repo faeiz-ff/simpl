@@ -1,6 +1,6 @@
-declare module "simpl-interpreter" {
+declare module "bahasa-simpl" {
     export class Simpl {
-        constructor(opts: {
+        constructor(opts?: {
             keepMemory?: boolean,
         });
         runCode(code: string): string;

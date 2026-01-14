@@ -1,4 +1,6 @@
+
 # Tur Sintaks
+Tur singkat sederhana untuk mengetahui kapabilitas `simpl`!
 
 `simpl` masih dalam tahap pengembangan, jadi apapun yang tertera disini mungkin saja berubah sewaktu-waktu.
 ## Cetak ke layar
@@ -8,6 +10,9 @@ cetak "Halo, dunia!"
 ## Komentar
 ```simpl
 # Tanda pagar mengabaikan hal didepannya sampai baris selanjutnya
+/*
+komen multi baris
+*/
 ```
 ## Tipe primitif
 ```simpl
@@ -39,8 +44,12 @@ datum kecualiIni = apa + aja + boleh    # Error! angka + petik + baris
 ```
 ## Perubahan variabel
 ```simpl
-angka hitung = 0
+datum hitung = 0
 rubah hitung = hitung + 1
+rubah hitung *= 2
+cetak hitung # mencetak 2
+
+rubah hitung = "yea"
 ```
 ## Variabel tetap
 ```simpl
@@ -52,11 +61,11 @@ rubah PI = 3                    # Error! Variabel tetap!
 datum bil = 10
 cetak bil                       # Mencetak 10          
 {
-  rubah bil = 20
-  cetak bil                     # Mencetak 20
+    rubah bil = 20
+    cetak bil                     # Mencetak 20
 
-  datum bil = bil + 10          
-  cetak bil                     # Mencetak 30
+    datum bil = bil + 10          
+    cetak bil                     # Mencetak 30
 }
 cetak bil                       # Mencetak 20
 ```
@@ -64,11 +73,11 @@ cetak bil                       # Mencetak 20
 ```simpl
 # Wajib memakai kurung kurawal { }
 kalau salah {
-  cetak "diabaikan"
+    cetak "diabaikan"
 } namun kalau benar {
-  cetak "dieksekusi"
+    cetak "dieksekusi"
 } namun {
-  cetak "diabaikan"
+    cetak "diabaikan"
 }
 ```
 ## Pengulangan
@@ -76,40 +85,40 @@ kalau salah {
 angka i = 1
 # Wajib memakai kurung kurawal {}
 slagi benar {
-  kalau i == 2 {
+    kalau i == 2 {
+        rubah i = i + 1
+        lewat                       # melewati loop, lanjutkan
+    } namun kalau i == 4 { henti }  # keluar dari loop
+    cetak i
     rubah i = i + 1
-    lewat                         # melewati loop, lanjutkan
-  } namun kalau i == 4 { henti }  # keluar dari loop
-  cetak i
-  rubah i = i + 1
 }
 
-untuk angka i dalam [1,2,3,4,5] { # mengiterasi baris/petik saja
-  kalau i == 2 { lewat }
-  kalau i == 4 { henti }
-  cetak i
+untuk angka i dalam [1,2,3,4,5] {   # mengiterasi baris/petik saja
+    kalau i == 2 { lewat }
+    kalau i == 4 { henti }
+    cetak i
 }
 ```
 ## Mesin 
 ```simpl
-mesin f ==> () {          # =>(){} adalah lambda
-  hasil 10		  # Mengembalikan angka 10
+mesin f ==> () {    # =>(){} adalah lambda
+    hasil 10	    # Mengembalikan angka 10
 }
-cetak f()		  # Mencetak 10
-cetak f			  # Mencetak Mesin<>
+cetak f()		    # Mencetak 10
+cetak f			    # Mencetak Mesin<>
 
-mesin g = f		  # First-class
+mesin g = f		    # First-class
 
 mesin h ==> (mesin f, datum n) {
-  hasil f(f(n))
+    hasil f(f(n))
 }
 cetak h(
-  =>(angka n){ hasil n*n }, 
-  10
+    =>(angka n){ hasil n*n }, 
+    10
 )					# Mencetak 10000
 
 mesin penambah ==> (angka n) {		# Closure
-  hasil =>(angka a) { hasil a+n }	# Menghasilkan mesin
+    hasil =>(angka a) { hasil a+n }	# Menghasilkan mesin
 }
 mesin penambahDua = penambah(2)
 cetak penambahDua(1)				# Mencetak 3
@@ -123,9 +132,9 @@ cetak pencetakUang()				# Mencetak nihil
 ```simpl
 # nihil adalah nilai kosong tanpa tipe yang tidak dapat dioperasikan
 datum a = nihil
-angka b = a + 10		  # Error! Operasi terhadap nihil
-kalau a == nihil {  }		  # Error! Operasi terhadap nihil
-kalau nihil?(a) { cetak "uang" }  # Mencetak "uang"
+angka b = a + 10                    # Error! Operasi terhadap nihil
+kalau a == nihil {  }		        # Error! Operasi terhadap nihil
+kalau nihil?(a) { cetak "uang" }    # Mencetak "uang"
 ```
 ## Jenis
 ```simpl
@@ -133,18 +142,30 @@ kalau nihil?(a) { cetak "uang" }  # Mencetak "uang"
 jenis Mood ( great, good, normal, bad, awful )
 Mood status = Mood.great
 kalau status == Mood.great {
-  cetak "yes"
+    cetak "yes"
 } namun kalau status == Mood.awful {
-  cetak "noo"
+    cetak "noo"
 }
+```
+## Lihat
+```simpl
+jenis Mood ( awful, bad, normal, good, great )
+
+Mood moodSaya = Mood.good
+
+lihat moodSaya 
+kasus Mood.good  { jatuh }
+kasus Mood.great { cetak "lets goo" }
+namun            { cetak "Yaudahlahya" }
+# mencetak "lets goo"
 ```
 ## Model
 ```simpl
 # Definisi dengan tanda kurung ( )
 model Pohon (
-  Pohon kiri,
-  Pohon kanan,
-  datum isi
+    Pohon kiri,
+    Pohon kanan,
+    datum isi
 )
 
 Pohon akar = Pohon(nihil, nihil, 0)
@@ -181,5 +202,39 @@ modul Mtk {
 
 cetak Mtk.akar2(4)			# Mencetak 2
 ```
+## Modul-Model
+```simpl
+model ganda ( datum a, datum b )
+modul ganda {
+    mesin evaluasi ==> (ganda g) { hasil g.a + g.b }
+    mesin PLUS ==> (ganda g1, ganda g2) { 
+        hasil ganda(evaluasi(g1), evaluasi(g2))
+    }
+}
 
+ganda foo = ganda(1,1)
 
+cetak ganda.evaluasi(foo)
+# mencetak 2
+
+# sama dengan 
+
+cetak foo.evaluasi() 
+# mencetak 2
+
+# -----------------------
+
+cetak (foo.PLUS(foo)).evaluasi()
+# mencetak 4
+
+# sama dengan 
+
+cetak (foo + foo).evaluasi()
+# mencetak 4
+```
+## Salur 
+```
+cetak 10 / 3            # 3.333...
+    |> angka.bulat($)   # angka.bulat(3.333...) => 3
+    |> $ + $            # 3 + 3
+```

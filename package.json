@@ -1,7 +1,7 @@
 {
   "name": "bahasa-simpl",
-  "version": "1.0.13",
-  "description": "Simpl: Indonesian Mini Programming Language interpreter",
+  "version": "1.0.15",
+  "description": "Bahasa pemrograman mini berbasis kata bahasa Indonesia",
   "exports": {
     ".": {
       "types": "./dist/simpl.d.ts",
@@ -10,7 +10,7 @@
   },
   "main": "./dist/simpl.js",
   "module": "./dist/simpl.js",
-  "types": "./dist/simpl.js",
+  "types": "./dist/simpl.d.ts",
   "files": [
     "dist"
   ],
@@ -30,10 +30,6 @@
   },
   "homepage": "https://github.com/faeiz-ff/simpl#readme",
   "devDependencies": {
-    "@rollup/plugin-terser": "^0.4.4",
     "rollup": "^4.55.1"
-  },
-  "dependencies": {
-    "bahasa-simpl": "^1.0.3"
   }
 }

@@ -1,9 +1,9 @@
-
-
 # `simpl`: Indonesian Mini Programming Language
 `simpl` adalah bahasa pemrograman mini yang berbasis dari bahasa Indonesia. Bahasa ini dirancang untuk memudahkan penerjemahan berbagai konsep pemrograman ke dalam bahasa Indonesia. Selain itu, semua kata kunci (_keywords_) dari bahasa ini memiliki jumlah karakter persis 5 huruf untuk alasan estetika :)
 
 `simpl` adalah akronim rekursif dari `simpl`: Indonesian Mini Programming Language
+
+Coba sekarang dalam website [simpl](https://bahasa-simpl.pages.dev)!
 
 ## Fitur  `simpl`
 `simpl` **masih dalam tahap pengembangan!** Jadi, semua yang tertera disini akan berubah sewaktu-waktu!
@@ -17,16 +17,48 @@ Berikut fitur yang _sekarang_ sudah diimplementasikan:
 
 Fitur yang akan datang:
 - dokumentasi penuh
-- Pembersihan dan perapihan kode sumber :')
+- Pembersihan dan perapihan kode sumber
 - Pengecekan sebelum eksekusi (Analisa semantik)
 - Pe`masuk`an input ke program
 - Pengendalian `error`
 - `impor` dan `expor`
 - bytecode...
-- dan fitur lainnya yang tidak terpikirkan sekarang :)
+- dan fitur lainnya yang tidak terpikirkan sekarang 
+
+## Instalasi
+
+Saat ini CLI belum didukung.
+
+```
+npm install bahasa-simpl
+```
+
+lalu pada suatu index.js dalam folder yang sama:
+
+```js
+import { Simpl } from "bahasa-simpl";
+
+let s = new Simpl();
+
+console.log(s.runCode(`
+
+cetak "Halo Dunia!"
+
+`));
+```
+
+## API
+
+`class Simpl(opts?: { keepMemory?: boolean })`:
+- Menghasilkan sebuah instance dari simpl
+  - `keepMemory?: boolean` default `false`:
+    - Kalau bernilai `true`, `simpl` akan menyimpan memorinya setiap kali `runCode`, Mengingatnya kembali saat `runCode` selanjutnya.
+
+  - `runCode(code: string): string`:
+    - Menjalankan `simpl` dan mencetak output programnya ke layar.
 
 ## Contoh `simpl`
-Tur lebih lengkap ada dalam [Tur Sintaks Simpl](docs/tur.md)
+Tur lebih lengkap ada dalam [Tur Sintaks Simpl](https://github.com/faeiz-ff/simpl/blob/main/docs/tur.md)
 - `mesin` akar dua
 ```simpl
 mesin akar2 ==> (angka n) {
