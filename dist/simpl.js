@@ -274,10 +274,13 @@ const PetikTipe = (() => {
                 } 
                 i++;
                 if (formator.length === 0) {
-                    v.error("Baris dalam tulisFormat tidak mempunyai cukup elemen!");
+                    v.error("Baris dalam format tidak mempunyai cukup elemen.");
                 }
                 finalized += formator.shift();
             }
+        }
+        if (formator.length !== 0) {
+            v.error("Baris dalam format mempunyai terlalu banyak elemen.");
         }
         return new Value(petikSymbol, finalized);
 
@@ -550,10 +553,13 @@ const GLOBAL_ENV = (() => {
                 } 
                 i++;
                 if (formator.length === 0) {
-                    v.error("Baris dalam tulisFormat tidak mempunyai cukup elemen!");
+                    v.error("Baris dalam tulisf tidak mempunyai cukup elemen.");
                 }
                 finalized += formator.shift();
             }
+        }
+        if (formator.length !== 0) {
+            v.error("Baris dalam tulisf mempunyai terlalu banyak elemen.");
         }
         v.output.push(finalized);
         return d;
