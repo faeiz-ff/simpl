@@ -1,6 +1,6 @@
 {
   "name": "bahasa-simpl",
-  "version": "1.0.20",
+  "version": "1.0.21",
   "description": "Bahasa pemrograman mini berbasis kata bahasa Indonesia",
   "exports": {
     ".": {

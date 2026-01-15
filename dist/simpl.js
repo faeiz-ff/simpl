@@ -934,7 +934,7 @@ class Interpreter {
             let type = callable.parameters[i][0];
 
             if (type === null) continue;
-            if (args[i].data !== null) continue;
+            if (args[i].data === null) continue;
             if (args[i].type !== type) {
                 this.line = callLineNum;
                 this.error(`Tipe argumen tidak sama dengan parameter. Menemukan ${args[i].type.description}, harusnya ${type.description}`);
