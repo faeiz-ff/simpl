@@ -90,6 +90,8 @@ class Stipe extends Variable {
 }
 
 function kePetik(v, thing) {
+    if (!thing || (thing.data === null && !thing.member)) return "nihil";
+
     if (thing.type === logisSymbol) {
         return thing.data ? "benar" : "salah";
     } else if (thing.type === barisSymbol) {
@@ -833,8 +835,8 @@ class Interpreter {
         // a real TODO would've been to implement real iterables
         let iterable = indexExpr.iterable.accept(this);
         if (!iterable || iterable.data === null) {
-            this.error("Objek bernilai nihil, tidak dapat mengindeksnya.");
-        }
+            this.error("Objek tidak dapat diindeks, bernilai nihil atau bukan sebuah baris/petik.");
+        } 
 
         if (iterable.type === petikSymbol) {
             iterable = new Value(barisSymbol, iterable.data.split("").map(str => new Value(petikSymbol, str)));
@@ -1054,7 +1056,7 @@ class Interpreter {
         let willBeCalled = this.exprWillBeCalled;
         this.exprWillBeCalled = false;
         let main = memberExpr.main.accept(this);
-        if (!main || main.data === null) {
+        if (!main || (main.data === null && !main.member)) {
             this.error("Objek bernilai nihil, tidak dapat mengaksesnya.");
         }
         let name = memberExpr.member.token.lexeme;
@@ -1385,7 +1387,7 @@ class Interpreter {
     }
 
     error(message) {
-        throw new SimplErrorEksekusi(`Error Eksekusi => ${message}`, this.line, this.output.join('\n'));
+        throw new SimplErrorEksekusi(`Error Eksekusi => ${message}`, this.line, this.output.join(''));
     }
 
     

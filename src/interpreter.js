@@ -82,8 +82,8 @@ export class Interpreter {
         // a real TODO would've been to implement real iterables
         let iterable = indexExpr.iterable.accept(this);
         if (!iterable || iterable.data === null) {
-            this.error("Objek bernilai nihil, tidak dapat mengindeksnya.")
-        }
+            this.error("Objek tidak dapat diindeks, bernilai nihil atau bukan sebuah baris/petik.");
+        } 
 
         if (iterable.type === Value.petikSymbol) {
             iterable = new Value.Value(Value.barisSymbol, iterable.data.split("").map(str => new Value.Value(Value.petikSymbol, str)));
@@ -303,7 +303,7 @@ export class Interpreter {
         let willBeCalled = this.exprWillBeCalled;
         this.exprWillBeCalled = false;
         let main = memberExpr.main.accept(this);
-        if (!main || main.data === null) {
+        if (!main || (main.data === null && !main.member)) {
             this.error("Objek bernilai nihil, tidak dapat mengaksesnya.")
         }
         let name = memberExpr.member.token.lexeme;
@@ -634,7 +634,7 @@ export class Interpreter {
     }
 
     error(message) {
-        throw new SimplErrorEksekusi(`Error Eksekusi => ${message}`, this.line, this.output.join('\n'));
+        throw new SimplErrorEksekusi(`Error Eksekusi => ${message}`, this.line, this.output.join(''));
     }
 
     

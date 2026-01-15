@@ -42,6 +42,8 @@ export class Stipe extends Variable {
 }
 
 export function kePetik(v, thing) {
+    if (!thing || (thing.data === null && !thing.member)) return "nihil";
+
     if (thing.type === logisSymbol) {
         return thing.data ? "benar" : "salah";
     } else if (thing.type === barisSymbol) {
