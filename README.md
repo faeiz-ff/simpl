@@ -3,7 +3,7 @@
 
 `simpl` adalah akronim rekursif dari `simpl`: Indonesian Mini Programming Language
 
-Coba sekarang dalam website [simpl](https://bahasa-simpl.pages.dev)!
+Coba sekarang dalam website [simpl](https://bahasa-simpl.pages.dev)! (editor kode hanya ditest di _chrome_! Web Browser lain mungkin mempunyai bug saat mengedit kode!)
 
 ## Fitur  `simpl`
 `simpl` **masih dalam tahap pengembangan!** Jadi, semua yang tertera disini akan berubah sewaktu-waktu!
